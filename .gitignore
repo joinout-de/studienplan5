@@ -1,0 +1,6 @@
+*.ical
+xls_src
+html_conv
+*_IS_CURRENT
+*~*
+file_for_inspect.rb
