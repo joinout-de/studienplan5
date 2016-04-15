@@ -42,6 +42,7 @@ require "logger"
 require "set"
 require "icalendar"
 require "json/add/struct"
+require "optparse"
 require "./clazz"
 require "./planelement"
 require "./util"; include StudienplanUtil
@@ -94,8 +95,50 @@ days=["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
 
 days_RE_text = "(#{days.join ?|})"
 
+# Command line opts
+$options = {}
+
+OptionParser.new do |opts|
+    opts.banner = "Usage: %s [$options] FILE" % $0
+    opts.separator ""
+    opts.separator "FILE is a HTMLed XLS Studienplan."
+    opts.separator ""
+
+    opts.on("-c", "--calendar", "Generate iCalendar files.") do |c|
+        $options[:ical] = c
+    end
+
+    opts.on("-j", "--json", "Generate JSON data file.") do |j|
+        $options[:json] = j
+    end
+
+    opts.on("-o", "--output NAME", "Specify output file/directory name. For calendar this will be the target directory, for JSON it will be the file, with .json suffix.") do |o|
+        $options[:output] = o
+    end
+
+    opts.on("--json-object-keys", "Don't stringify hash keys, preserve them in an extra Array.") do |jok|
+        $options[:jok] = jok
+    end
+
+    opts.on("--json-pretty", "Write pretty JSON data.") do |jp|
+        $options[:json_pretty] = jp
+    end
+
+    opts.on("-h", "--help", "Prints this help.") do |h|
+        puts opts
+        exit
+    end
+
+end.parse!
+
 # Output diretory for generated iCals.
-ical_dir="ical"
+ical_dir = $options[:output] ? options[:output] : "ical"
+
+# File name for JSON data file
+data_file = $options[:output] ? options[:output] + ".json" : "studienplan-data.json"
+
+# JSON data file version
+$data_version = "1.0"
 
 $logger = Logger.new(STDERR)
 $logger.level= Logger::DEBUG
@@ -103,10 +146,18 @@ $logger.level= Logger::DEBUG
 # Hackedy hack hack
 
 def data.store_push(key, value)
-
     unless self[key]; self.store key, Set.new; end
-
     self[key].add value
+end
+
+def data.jok
+    ary = [[], {}]
+
+    self.each do |key,value|
+        ary[0].push key
+        ary[1].store ary[0].length-1, value
+    end
+    ary
 end
 
 def groups.to_s # For debugging :)
@@ -657,7 +708,21 @@ else
         end
     end
 
-    if true # For debugging
+    if $options[:json]
+        json_data = {
+            json_object_keys: $options[:jok] ? true : false,
+            json_data_version: $data_version,
+            generated: Time.now,
+            data: $options[:jok] ? data.jok : data
+        }
+        $logger.debug "Writing JSON data file \"%s\"" % data_file
+        File.open(data_file, "w+") do |datafile|
+            datafile.puts $options[:json_pretty] ? JSON.pretty_generate(json_data) : JSON.generate(json_data)
+        end
+        $logger.info "Wrote JSON data file \"%s\"" % data_file
+    end
+
+    if $options[:ical]
         Dir.mkdir(ical_dir) unless Dir.exists?(ical_dir)
 
         data.each do |clazz,planElements|
@@ -675,13 +740,15 @@ else
             clazz_file += "-" + clazz.course if clazz.course
             clazz_file += "-" + clazz.cert if clazz.cert
 
-            $logger.debug "Clazz file: #{clazz_file}"
+            $logger.debug "Writing calendar file \"%s\"" % clazz_file
 
             cal_file = File.open(ical_dir + File::SEPARATOR + clazz_file + ".ical", "w+")
             cal_file.puts cal.to_ical
             cal_file.close
 
         end
+
+        $logger.info "Wrote calendar files to \"%s\"" % ical_dir
     end
     #$logger.debug data.to_json
 end # file given check

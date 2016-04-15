@@ -48,10 +48,8 @@ Clazz = Struct.new(:name, :course, :cert, :jahrgang, :group) do
         self.name ? "%s(%s)" % [self.full_name, self.full_jahrgang] : "#{self.full_jahrgang}"
     end
 
-    private
     def format(str, format="%s", empty="", opts=[])
         StudienplanUtil.format_non_empty(str, format, empty, opts)
     end
-
 end
 
