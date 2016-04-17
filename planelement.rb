@@ -84,7 +84,7 @@ PlanElement = Struct.new(:title, :clazz, :room, :time, :dur, :lect, :nr, :specia
             if dtend
                 evt.dtend = dtend
             elsif self.dur
-                evt.dtend = self.time + self.dur
+                evt.dtend = self.time + self.dur/24
             else
                 evt.dtend = self.time
             end
@@ -92,6 +92,8 @@ PlanElement = Struct.new(:title, :clazz, :room, :time, :dur, :lect, :nr, :specia
             evt.summary = title + nr
             evt.location = room
             evt.description = "#{lect}#{more}#{clazz}"
+
+            #evt.uid = "de.joinout.criztovyl.studienplan5.planElement." + self.clazz.id_str + "." + title+nr # TODO: UID. This is not unique, find something.
         end
     end
 end

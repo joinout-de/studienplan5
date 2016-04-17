@@ -1,19 +1,19 @@
-#!/usr/bin/env ruby 
-# A utitily to convert HTMLed-XLS studienpläne into iCals. 
-# Copyright (C) 2016 Christoph criztovyl Schulz 
-# 
-# This program is free software: you can redistribute it and/or modify 
-# it under the terms of the GNU General Public License as published by 
-# the Free Software Foundation, either version 3 of the License, or 
-# (at your option) any later version. 
-# 
-# This program is distributed in the hope that it will be useful, 
-# but WITHOUT ANY WARRANTY; without even the implied warranty of 
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
-# GNU General Public License for more details. 
-# 
-# You should have received a copy of the GNU General Public License 
-# along with this program. If not, see <http://www.gnu.org/licenses/>. 
+#!/usr/bin/env ruby
+# A utitily to convert HTMLed-XLS Studienpläne into iCal.
+# Copyright (C) 2016 Christoph criztovyl Schulz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ##########
 # README #
@@ -99,7 +99,7 @@ days_RE_text = "(#{days.join ?|})"
 $options = {}
 
 OptionParser.new do |opts|
-    opts.banner = "Usage: %s [$options] FILE" % $0
+    opts.banner = "Usage: %s [options] FILE" % $0
     opts.separator ""
     opts.separator "FILE is a HTMLed XLS Studienplan."
     opts.separator ""
@@ -245,7 +245,7 @@ else
         if not planEnd
             unless plan[r]; plan.push []; end
             plan[r].push tds
-        else 
+        else
             # Legend is column-orientated
             tr.xpath("td").map.with_index do |td, index|
                 if index >= legend.length; legend.push []; end # Huh, not very secure xD
@@ -294,7 +294,7 @@ else
 
                 # Use the BG color we already got in step 1
                 rowJahrgang = ( rowHeader = rowPart[0]) ? rowHeader["bgcolor"] : ""
-                rowJahrgang = ( colorKey = jahrgangsColorKeys[j] ) ? colorKey[rowJahrgang] : "" 
+                rowJahrgang = ( colorKey = jahrgangsColorKeys[j] ) ? colorKey[rowJahrgang] : ""
 
                 rowJahrgangClazz = Clazz::Jahrgang(rowJahrgang)
 
@@ -302,10 +302,10 @@ else
 
                 rowPart.map.with_index do |element, k|
 
-                    $logger.debug "row #{i}, part #{j}, element #{k}" 
+                    $logger.debug "row #{i}, part #{j}, element #{k}"
 
                     # As mentioned above step 1
-                    cw = ( cw = plan[0][j][k] ) ? cw.text : cw 
+                    cw = ( cw = plan[0][j][k] ) ? cw.text : cw
                     date = (date = plan[1][j][k] ) ? date.text : date
 
                     if date == "Gruppe"
@@ -352,11 +352,11 @@ else
                             cert = $3 # Zertifizierung (FST, FIS, ...)
                             group = $4
 
-                            rowClass = Clazz.new(name, course, cert, rowJahrgang) 
+                            rowClass = Clazz.new(name, course, cert, rowJahrgang)
 
                             unless groups[rowJahrgang]; groups.store(rowJahrgang, {}); end
                             unless groups[rowJahrgang][group]; groups[rowJahrgang].store group, Set.new; end
-                            groups[rowJahrgang][group].add rowClass 
+                            groups[rowJahrgang][group].add rowClass
 
                             $logger.debug "Class: #{rowClass}"
 
@@ -379,7 +379,7 @@ else
 
                             if text =~ /(.*):\n(.*)/m
                                 $logger.debug "Comment. #{$2.inspect}"
-                                comment = $2 
+                                comment = $2
                                 next # Huh, it's not cool to jump out of the loop.
                             elsif text.include? "siehe Kommentar"
 
@@ -399,9 +399,9 @@ else
                             $logger.debug "Scan: #{scan}" unless scan.length == 0
 
                             # Determine wether is one of these ugly multi-days like this one: "Do/Fr/Sa WP-BI2(b/c)-Sam"
-                            unless scan.length == text.split(" ")[0].scan(/(#{days_RE_text})/).length 
+                            unless scan.length == text.split(" ")[0].scan(/(#{days_RE_text})/).length
 
-                                $logger.info "Multiday! #{text.inspect}" 
+                                $logger.info "Multiday! #{text.inspect}"
 
                                 multidays = []
                                 sep = nil
@@ -445,7 +445,7 @@ else
                             # Now we dive into the more or less ugly code.
                             # (if-elsif-elsif)
                             # First, the best case: our RegEx matched.
-                            if 
+                            if
                                 scan and
                                     ( match = scan[0] ) and # What if there is more than one match? Is that even possible?
                                     ( match.length == 8 ) and
@@ -470,12 +470,12 @@ else
                                 end
 
                                 # Check what remaining information is there(if-else)
-                                
+
                                 # Subject, group/duration, lecturer, i.e. "DuA(1d)-Bö" or anything like "Subject(groups)-Lecturer"
-                                if match7 =~ /(.*)\((.*)\)(-(.*))?/ # RegEx: title, group or duration, lecturer with leading dash (optional), lecturer (sub-match from prev.) 
+                                if match7 =~ /(.*)\((.*)\)(-(.*))?/ # RegEx: title, group or duration, lecturer with leading dash (optional), lecturer (sub-match from prev.)
 
                                     #TODO: Multi-Title. Like multi-days. Ugly things. I.e. "WIN2/KRC(4c1/c2)-Wi/Schw"
-                                    
+
                                     title = $1
                                     group = $2
                                     lect = (lect = lects[$4]) ? lect : $4 # Translate abbr., if possible
@@ -490,7 +490,7 @@ else
                                     #TODO: From title to group as special nr. -1 maybe, thought it's illogial (Can't determine max. num. yet, would require another loop)
                                     refr="Refr"
                                     group.gsub! "Ref ", refr + " "
-                                    if group.include? refr 
+                                    if group.include? refr
                                         group.gsub! refr, ""
                                         group.strip!
                                         title += " " + refr
@@ -505,10 +505,10 @@ else
                                                     clazz = clazz_
                                                 end
                                             end
-                                        end 
+                                        end
                                     end
                                     #
-                                    # Prep. from group as nr. 0 
+                                    # Prep. from group as nr. 0
                                     prep="vor1"
                                     if group.include? prep
                                         group.gsub! prep, "0"
@@ -536,9 +536,9 @@ else
                                             room = $1
                                         end
 
-                                        $logger.debug "Rest-Comment #{comment.inspect}, rowJahrgang #{rowJahrgang}, Room #{room.inspect}" 
+                                        $logger.debug "Rest-Comment #{comment.inspect}, rowJahrgang #{rowJahrgang}, Room #{room.inspect}"
 
-                                        dur_ = group.empty? ? nil : Rational(group, 60) 
+                                        dur_ = group.empty? ? nil : Rational(group, 60)
 
                                         # Multi Courses! dafuq.
                                         #TODO: We should put that (the ugly multi-* things) into a function.
@@ -579,7 +579,7 @@ else
                                                 $logger.debug "Clazz: #{clazz}, Comment: #{pe.more.inspect}"
 
                                                 data.store_push(pe.clazz, pe)
-                                                planElement.push(pe) 
+                                                planElement.push(pe)
                                             end
                                         end
                                     else # No exam, groups = groups
@@ -604,11 +604,11 @@ else
                                             $logger.debug "Group #{grp}"
 
                                             # Match can be event nr or a group (finally!)
-                                            if grp[0] =~ /^\d+$/ and grp[1].empty? 
+                                            if grp[0] =~ /^\d+$/ and grp[1].empty?
                                                 nr = grp[0]
                                             else
                                                 # A group contain multiple classes, create element for both.
-                                                classes = groups[rowJahrgang][grp[0]] 
+                                                classes = groups[rowJahrgang][grp[0]]
                                                 classes.each do |groupclazz|
 
                                                     unless groupclazz.nil? or grp[1].nil? or grp[1].empty?
@@ -630,16 +630,16 @@ else
                                     match7 = match[7].to_s.strip
 
                                     $logger.debug "Match7 ALTERN"
-                                   
+
                                     # Catch all the specialities we know. (There are exams without a duration! Who does this?)
                                     #
                                     #             Special titles $1                                                 Title $4 and room $5 only
                                     #             vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv                vvvvvvvvvvvvv
-                                    if match7 =~ /(Testat-.*|Refr .*|Info (?:zu )?.*|.*-WP .*|.*KL.*)|(.*)-(\w{2,3})|(.*) ?\[(.*)\]/  
+                                    if match7 =~ /(Testat-.*|Refr .*|Info (?:zu )?.*|.*-WP .*|.*KL.*)|(.*)-(\w{2,3})|(.*) ?\[(.*)\]/
                                         #                                                             ^^^^^^^^^^^^^^
                                         #                                                             Something $2 with
                                         #                                                             a lecturer $3
-                                        
+
                                         pe = PlanElement.new($1||$2||$4, rowClass||rowJahrgangClazz, $5, pe_start, nil, (lect = lects[$3]) ? lect : $3)
 
                                         data.store_push pe.clazz, pe
@@ -661,7 +661,7 @@ else
                                     redo
                                 end
                             elsif text =~ /(.*?) ?\[(.*)\]/ # Our general-purpose RegEx did not match. Try a RegEx for elems like "Studienpräsenz [24]". These are full-week events.
-                                $logger.debug "Title #{$1.inspect} and Room #{$2.inspect} only. Comment #{comment.inspect}" 
+                                $logger.debug "Title #{$1.inspect} and Room #{$2.inspect} only. Comment #{comment.inspect}"
 
                                 # If we have another full-week-event, replace it.
                                 planElement.delete_if do |e|
@@ -691,7 +691,7 @@ else
         end # skip first two rows
     end # rows iteration
     $logger.debug "Data following..."
-    mapped.each do |row|  
+    mapped.each do |row|
         if row
             row.each do |part|
                 if part
@@ -736,7 +736,7 @@ else
             end
 
             clazz_file = clazz.jahrgang;
-            clazz_file += "-" + clazz.name if clazz.name
+            clazz_file += "-" + clazz.full_name if clazz.full_name()
             clazz_file += "-" + clazz.course if clazz.course
             clazz_file += "-" + clazz.cert if clazz.cert
 
@@ -752,4 +752,3 @@ else
     end
     #$logger.debug data.to_json
 end # file given check
-

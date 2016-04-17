@@ -35,7 +35,7 @@ Clazz = Struct.new(:name, :course, :cert, :jahrgang, :group) do
     end
 
     def full_name
-        format(self.group, format(self.name, "%s-%%s"), format(self.name))
+        format(self.group, format(self.name, "%s-%%s"), format(self.name, "%s", nil))
         #self.group ? self.name.to_s + "-" + self.group.to_s : self.name.to_s
     end
 
