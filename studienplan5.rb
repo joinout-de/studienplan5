@@ -43,6 +43,7 @@ require "set"
 require "icalendar"
 require "json/add/struct"
 require "optparse"
+require "fileutils"
 require "./clazz"
 require "./planelement"
 require "./util"; include StudienplanUtil
@@ -95,6 +96,10 @@ days=["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
 
 days_RE_text = "(#{days.join ?|})"
 
+ical_dir = "ical"
+data_file = "data.json"
+classes_file = "classes.json"
+
 # Command line opts
 $options = {}
 
@@ -112,11 +117,15 @@ OptionParser.new do |opts|
         $options[:json] = j
     end
 
-    opts.on("-o", "--output NAME", "Specify output file/directory name. For calendar this will be the target directory, for JSON it will be the file, with .json suffix.") do |o|
+    opts.on("--classes", "Generate JSON classes structure.") do |j|
+        $options[:classes] = j
+    end
+
+    opts.on("-o", "--output NAME", "Specify output file/directory name. For calendar this will be the target directory, for JSON it will be the file, with .{data,classes}.json suffix. If ends with slash, will be output directory.") do |o|
         $options[:output] = o
     end
 
-    opts.on("--json-object-keys", "Don't stringify hash keys, preserve them in an extra Array.") do |jok|
+    opts.on("-k", "--json-object-keys", "Don't stringify hash keys, preserve them in an extra Array.") do |jok|
         $options[:jok] = jok
     end
 
@@ -124,18 +133,39 @@ OptionParser.new do |opts|
         $options[:json_pretty] = jp
     end
 
-    opts.on("-h", "--help", "Prints this help.") do |h|
+    opts.on("--web", "Export content in \"web\" diretory, too. Does nothing unless -o is a directory. (\"web\" contains a simple web page that allows a student to select her/his calendars.)") do |web|
+        $options[:web] = web
+    end
+
+    opts.on("--calendar-dir NAME", "Name for the diretory containing the iCal files.") do |cal_dir|
+        $options[:cal_dir] = cal_dir
+    end
+
+    opts.on("-h", "--help", "Print this help.") do |h|
         puts opts
         exit
     end
 
 end.parse!
 
-# Output diretory for generated iCals.
-ical_dir = $options[:output] ? options[:output] : "ical"
+if $options[:cal_dir]
+    ical_dir = $options[:cal_dir]
+end
 
-# File name for JSON data file
-data_file = $options[:output] ? options[:output] + ".json" : "studienplan-data.json"
+outp = $options[:output]
+if outp 
+    if outp.end_with?(?/)
+        ical_dir = outp + ical_dir
+        data_file = outp + data_file
+        classes_file = outp + classes_file
+
+        Dir.mkdir(outp) unless Dir.exists?(outp)
+    else
+       ical_dir = outp
+       data_file = outp + ".data.json"
+       classes_file = outp + ".classes.json"
+    end
+end
 
 # JSON data file version
 $data_version = "1.0"
@@ -151,13 +181,14 @@ def data.store_push(key, value)
 end
 
 def data.jok
-    ary = [[], {}]
+    #ary = [[], {}]
 
-    self.each do |key,value|
-        ary[0].push key
-        ary[1].store ary[0].length-1, value
-    end
-    ary
+    #self.each do |key,value|
+        #ary[0].push key
+        #ary[1].store ary[0].length-1, value
+    #end
+    #ary
+    StudienplanUtil.json_object_keys(self)
 end
 
 def groups.to_s # For debugging :)
@@ -713,7 +744,7 @@ else
             json_object_keys: $options[:jok] ? true : false,
             json_data_version: $data_version,
             generated: Time.now,
-            data: $options[:jok] ? data.jok : data
+            data: $options[:jok] ? StudienplanUtil.json_object_keys(data) : data
         }
         $logger.debug "Writing JSON data file \"%s\"" % data_file
         File.open(data_file, "w+") do |datafile|
@@ -736,10 +767,11 @@ else
                 planElement.add_to_icalendar cal
             end
 
-            clazz_file = clazz.jahrgang;
-            clazz_file += "-" + clazz.full_name if clazz.full_name()
-            clazz_file += "-" + clazz.course if clazz.course
-            clazz_file += "-" + clazz.cert if clazz.cert
+            #clazz_file = clazz.jahrgang;
+            #clazz_file += "-" + clazz.full_name if clazz.full_name()
+            #clazz_file += "-" + clazz.course if clazz.course
+            #clazz_file += "-" + clazz.cert if clazz.cert
+            clazz_file = StudienplanUtil.class_ical_name clazz
 
             $logger.debug "Writing calendar file \"%s\"" % clazz_file
 
@@ -751,5 +783,42 @@ else
 
         $logger.info "Wrote calendar files to \"%s\"" % ical_dir
     end
-    #$logger.debug data.to_json
+
+    if $options[:classes]
+        json_data = {
+            json_object_keys: $options[:jok] ? true : false,
+            json_data_version: $data_version,
+            generated: Time.now,
+            data: {}
+        }
+
+        export = json_data[:data]
+
+        data.keys.each do |key|
+
+            if key.full_name
+                export.store(key, [])
+
+                parent = key
+                while parent = parent.parent
+                    export[key].push parent if data.keys.include? parent
+                end
+            end
+        end
+
+        json_data[:data] = StudienplanUtil.json_object_keys(export) if $options[:jok]
+
+        $logger.debug "Writing JSON classes file \"%s\"" % classes_file
+        File.open(classes_file, "w+") do |datafile|
+            datafile.puts $options[:json_pretty] ? JSON.pretty_generate(json_data) : JSON.generate(json_data)
+        end
+        $logger.info "Wrote JSON classes file \"%s\"" % classes_file
+
+    end
+
+    if $options[:web] and $options[:output] and $options[:output].end_with?(?/)
+        $logger.info "Copying web content to %s" % $options[:output]
+        FileUtils.cp_r "web/.", $options[:output]
+        $logger.debug "Copied."
+    end
 end # file given check

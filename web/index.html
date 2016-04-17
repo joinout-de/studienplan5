@@ -1,0 +1,125 @@
+<!--
+    (c) 2016 Christoph "criztovyl" Schulz
+    GPLv3 and later.
+    Part of studienplan5, a util to convert HTMLed-XLS Studienplände into iCal files.
+    https://github.com/criztovyl/studienplan5
+
+    Based on "cover" from Bootstrap
+    (C) 2011-2016 Twitter, Inc.
+    Licence: MIT License (see https://github.com/twbs/bootstrap/blob/master/LICENSE)
+-->
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+        <meta name="description" content="">
+        <meta name="author" content="">
+        <!--<link rel="icon" href="../../favicon.ico">-->
+
+        <title>studienplan5, HTMLed-XLS Studienplände converted to iCal files.</title>
+
+        <!-- Bootstrap core CSS -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+
+        <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+        <link href="ie10-viewport-bug-workaround.css" rel="stylesheet">
+
+        <!-- Custom styles for this template -->
+        <link href="cover.css" rel="stylesheet">
+
+        <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+            <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+        <![endif]-->
+    </head>
+
+    <body>
+
+        <div class="site-wrapper">
+
+            <div class="site-wrapper-inner">
+
+                <div class="cover-container">
+
+                    <div class="masthead clearfix">
+                        <div class="inner">
+                            <h3 class="masthead-brand">studienplan5</h3>
+                            <nav>
+                                <ul class="nav masthead-nav">
+                                    <li id="curr-home"><a href="#home">Startseite</a></li>
+                                    <li id="curr-usage" ><a href="#usage">Nutzen</a></li>
+                                    <!--<li id="curr-features"><a href="#features">Funktionen</a></li>-->
+                                    <li id="curr-contact"><a href="#contact">Kontakt</a></li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+
+                    <div class="inner cover" id="nojs">
+                        <h1 class="cover-heading"></h1>
+                        <p class="lead">JavaScript is disabled, please enable.</p>
+                    </div>
+
+                    <div class="inner cover" id="home" style="display: none;">
+                        <h1 class="cover-heading"></h1>
+                        <p class="lead">Semesterplan für's Studium als iCal.</p>
+                        <p class="lead">
+                        <a href="#usage" class="btn btn-lg btn-default">Starten</a>
+                        </p>
+                    </div>
+
+                    <div class="inner cover" id="usage" style="display: none;">
+                        <h1 class="cover-heading">Klasse</h1>
+                        <form action="#">
+                            <select disabled>
+                                <option>Klassen werden geladen, ist JavaScript aktiviert?</option>
+                            </select>
+                        </form>
+                        <div id="icals">
+                        </div>
+                    </div>
+
+                    <div class="inner cover" id="features" style="display: none;">
+                        <h1 class="cover-heading">Funktionen</h1>
+                        </p>
+                    </div>
+
+                    <div class="inner cover" id="contact" style="display: none;">
+                        <h1 class="cover-heading">Kontakt</h1>
+                        <ul>
+                            <li id="mail">eMail: <a>ch (punkt) schulz (ädd) joinout (punkt) de</a></li>
+                            <li>Telegram: <a href="https://telegram.me/criztovyl" target="_blank">@criztovyl</a></li>
+                            <li>Twitter: <a href="https://twitter.com/criztovyl" target="_blank">@criztovyl</a></li>
+                            <li>GitHub: <a href="https://github.com/criztovyl" target="_blank">criztovyl</a></li>
+
+                        </ul>
+                    </div>
+
+                    <div class="mastfoot">
+                        <div class="inner">
+                            <p><a href="https://github.com/criztovyl/studienplan5" target="_blank">studienplan5</a> by <a href="https://github.com/criztovyl" target="_blank" >@criztovyl</a></p>
+                            <p>Cover template for <a href="http://getbootstrap.com" target="_blank">Bootstrap</a>, by <a href="https://twitter.com/mdo" target="_blank">@mdo</a>.</p>
+                            <p>eMail Spam-protect by <a href="http://joemaller.com/js-mailer.shtml">Joe Maller</a></p>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Bootstrap core JavaScript
+            ================================================== -->
+            <!-- Placed at the end of the document so the pages load faster -->
+            <script src="https://code.jquery.com/jquery-1.12.3.min.js"></script>
+            <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+            <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+            <script src="ie10-viewport-bug-workaround.js"></script>
+            <script src="js.js"></script>
+    </body>
+</html>

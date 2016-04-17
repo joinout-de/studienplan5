@@ -50,5 +50,23 @@ module StudienplanUtil
             empty
         end
     end
+
+    def class_ical_name(clazz)
+        name = clazz.jahrgang;
+        name += "-" + clazz.full_name if clazz.full_name
+        name += "-" + clazz.course if clazz.course
+        name += "-" + clazz.cert if clazz.cert
+        name
+    end
+
+    def json_object_keys(hash)
+        ary = [[], {}]
+
+        hash.each do |key,value|
+            ary[0].push key
+            ary[1].store ary[0].length-1, value
+        end
+        ary
+    end
 end
 
