@@ -730,6 +730,7 @@ else
             $logger.debug "Class: #{clazz}"
 
             cal = Icalendar::Calendar.new
+            cal.prodid = "-Christoph criztovyl Schulz//studienplan5 using icalendar-ruby//DE"
 
             planElements.each do |planElement|
                 planElement.add_to_icalendar cal
