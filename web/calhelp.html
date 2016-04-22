@@ -29,6 +29,16 @@
 
         <!-- Custom styles for this template -->
         <link href="cover.css" rel="stylesheet">
+        
+        <style type="text/css">
+  .masthead {
+    position: relative; 
+  }
+  .mastfoot {
+    position: relative; 
+  }
+        </style>
+
 
         <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
         <!--[if lt IE 9]>
@@ -47,11 +57,14 @@
 
                     <div class="masthead clearfix">
                         <div class="inner">
-                            <h3 class="masthead-brand">studienplan5</h3>
+                            <h3 class="masthead-brand">studienplan5 - Hilfe</h3>
                             <nav>
                                 <ul class="nav masthead-nav">
-                                    <li id="curr-home"><a href="#home">Startseite</a></li>
-                                    <li id="curr-usage" ><a href="#usage">Nutzen</a></li>
+                                    <li id="curr-home"><a href="#home">Start</a></li>
+                                    <li id="curr-outlook" ><a href="#outlook">Outlook</a></li>
+                                    <li id="curr-googlecal" ><a href="#googlecal">Google Calendar</a></li>
+                                    <li id="curr-thunderbird-lightning" ><a href="#thunderbird-lightning">Thunderbird w/ Lightning</a></li>
+                                    <li id="curr-evolution" ><a href="#evolution">Evolution</a></li>
                                     <!--<li id="curr-features"><a href="#features">Funktionen</a></li>-->
                                     <li id="curr-contact"><a href="#contact">Kontakt</a></li>
                                 </ul>
@@ -63,38 +76,65 @@
                         <p class="lead" style="color: black; background-color: orange;">JavaScript is disabled, please enable.</p>
                     </div>
 
-
                     <div class="inner cover" id="home">
                         <h1 class="cover-heading"></h1>
                         <p class="lead">Semesterplan für's Studium als iCal.</p>
                         <p class="lead">
-                          <a href="#usage" class="btn btn-lg btn-default">Starten</a>
+                        Bitte ein Thema oben rechts auswählen :)
                         </p>
                     </div>
 
-                    <div class="inner cover" id="usage">
-                        <h1 class="cover-heading">Klasse</h1>
-                        <form action="#">
-                            <select disabled>
-                                <option>Klassen werden geladen, ist JavaScript aktiviert?</option>
-                            </select>
-                        </form>
-                        <div id="icals" style="display: none;">
-                            <h2>iCal-Dateien</h2>
-                            <p>Zwei (oder mehr) Dateien,<br>
-                            einmal deine Klasse für Studienveranstaltungen, SPE, Praxis usw.<br>
-                            und dann noch dein Jahrgang für Klausuren.</p>
-                            <ul id="cal-links"></ul>
-                            <p>Have fun!</p><p>&lt;3</p>
-                            <a href="calhelp.html">Hilfe</a>
-                        </div>
+                    <div class="inner cover" id="outlook">
+                        <h1 class="cover-heading">Outlook</h1>
+                        <p>Für Outlook bitte einfach den "webcal in Outlook öffen" nutzen.</p>
+                        <p>Sollte das nicht funktionieren:
+                        <ul>
+                            <li>Rechtsklick auf  den "iCal herunterladen"-Link und "Link-Adresse kopieren" wählen.</li>
+                            <li>Kalender &rarr; Hinzufügen &rarr; Online &rarr; hier die oben kopierte Adresse einfügen.</li>
+                            <li>Fertig.</li>
+                        </ul>
+                        <p>
                     </div>
 
-                    <div class="inner cover" id="features">
-                        <h1 class="cover-heading">Funktionen</h1>
-                        <p></p>
+                    <div class="inner cover" id="googlecal">
+                        <h1 class="cover-heading">Google Calendar</h1>
+                        <ul>
+                            <li>Rechtsklick auf  den "iCal herunterladen"-Link und "Link-Adresse kopieren" wählen.</li>
+                            <li>Google Calendar öffnen.</li>
+                            <li>Auf das Dreieck nach unten bei "Andere Kalender" klicken und "Von URL hinzufügen" wählen.</li>
+                            <li>Link von oben einfügen und "Hinzufügen" klicken.</li>
+                            <li>Fertig.</li>
+                        </ul>
+                        <p>
                     </div>
 
+                    <div class="inner cover" id="thunderbird-lightning">
+                        <h1 class="cover-heading">Thunderbird mit Lighning</h1>
+                        <ul>
+                            <li>Rechtsklick auf  den "iCal herunterladen"-Link und "Link-Adresse kopieren" wählen.</li>
+                            <li>Thunderbird und dann Kalender öffnen.</li>
+                            <li>Rechtsklick auf die Kalenderlist und "Hinzufügen" wählen.</li>
+                            <li>Link von oben einfügen und "Hinzufügen" klicken.</li>
+                            <li>Fertig.</li>
+                        </ul>
+                        <p>
+                    </div>
+
+                    <div class="inner cover" id="evolution">
+                        <h1 class="cover-heading">Evolution</h1>
+                        <ul>
+                            <li>Rechtsklick auf  den "iCal herunterladen"-Link und "Link-Adresse kopieren" wählen.</li>
+                            <li>Evolution und dann Kalender öffnen.</li>
+                            <li>Oben links "Hinzufügen" und dann "Kalender" wählen.</li>
+                            <li>Bei Typ "Web" auswählen.</li>
+                            <li>Link von oben einfügen und "Hinzufügen" klicken.</li>
+                            <li>Aktualisierung auf gewünschte Zeit einstellen. (1x je Woche sollte genügen)</li>
+                            <li>ggf. "Sichere Verbindung" aktivieren. (empfohlen)</li>
+                            <li>Restliche Felder ignorieren.</li>
+                            <li>Fertig.</li>
+                        </ul>
+                        <p>
+                    </div>
                     <div class="inner cover" id="contact">
                         <h1 class="cover-heading">Kontakt</h1>
                         <ul>
@@ -128,8 +168,6 @@
             <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
             <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
             <script src="ie10-viewport-bug-workaround.js"></script>
-
             <script src="js.js"></script>
-            <script type="text/javascript">loadClasses();</script>
     </body>
 </html>

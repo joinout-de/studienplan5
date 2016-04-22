@@ -220,8 +220,8 @@ end
 # Hackedy hack hack END
 
 if not file = ARGV[0]
-    $logger.error "Missing input file. (ARGV 0)"
-else
+    $logger.info "No input file, won't parse anything."
+elsif $options[:json] or $options[:ical] or $options[:classes]
 
     # Step one, parse file into nested arrays and parse data we need before (esp. background colors)
     #
@@ -815,10 +815,12 @@ else
         $logger.info "Wrote JSON classes file \"%s\"" % classes_file
 
     end
-
-    if $options[:web] and $options[:output] and $options[:output].end_with?(?/)
-        $logger.info "Copying web content to %s" % $options[:output]
-        FileUtils.cp_r "web/.", $options[:output]
-        $logger.debug "Copied."
-    end
+else
+    $logger.info "Not parsing anything, no switch given that would require that."
 end # file given check
+
+if $options[:web] and $options[:output] and $options[:output].end_with?(?/)
+    $logger.info "Copying web content to %s" % $options[:output]
+    FileUtils.cp_r "web/.", $options[:output]
+    $logger.debug "Copied."
+end

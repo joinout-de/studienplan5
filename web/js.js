@@ -6,8 +6,6 @@
  */
 var classes, jahrgang, clazz;
 
-loadClasses();
-
 function Clazz(name, course, cert, jahrgang, group){
     this.name = name;
     this.course = course;
@@ -88,11 +86,13 @@ Clazz.prototype = {
     ical_file_link: function(into){
         loc = location.href.split("/")
         loc.pop()
-        curr_url = loc.join("/").replace("http://", "webcal://");
+        curr_url = loc.join("/").replace(/https?:\/\//, "webcal://");
         link = $("<span>")
-        $("<a>").attr({"href": "SS16/" + this.ical_file_name() + ".ical", "target": "_blank"}).html(this.simple(false)).appendTo(link)
-        //$(link).append("<br>")
-        //$("<a>").attr({"href": curr_url + "/SS16/" + this.ical_file_name() + ".ical", "target": "_blank"}).html("(Outlook)").appendTo(link)
+        container = $("<p>").html(this.simple(false) + ": <br/>").appendTo(link)
+        $("<a>").attr({"href": "SS16/" + this.ical_file_name() + ".ical", "target": "_blank"}).html("iCal herunterladen").appendTo(container) // Make "SS16" dynamic!
+        $(container).append("<br>")
+        $("<a>").attr({"href": curr_url + "/SS16/" + this.ical_file_name() + ".ical", "target": "_blank"}).html("webcal in Outlook öffnen").appendTo(container)
+        $(container).appendTo(link)
         if(into != undefined){
             $(link).appendTo(into);
             return into;
@@ -169,7 +169,6 @@ $(document).ready(function(){
     cloaked = cloaked.replace(".com", ".de")
     cloaked = ('ch' + '.schulz' + '@' + cloaked)
     $("#contact #mail a").attr("href", "mailto:" + cloaked).html(cloaked)
-    console.log(cloaked)
 
 });
 
@@ -184,13 +183,10 @@ function hashChange(){
 }
 function classSelect(){
 
-    target = $(".inner.cover#usage #icals")
+    target = $(".inner.cover#usage #icals ul#ical-links")
     $(target).html("");
 
     if(String(this.value) && this.value != -1){
-
-        $(target).html("<h2>iCal-Dateien:</h2>")
-        $(target).append("<p>Zwei (oder mehr) Dateien,<br>einmal deine Klasse für Studienveranstaltungen, SPE, Praxis usw.<br>und dann noch dein Jahrgang für Klausuren.</p>")
 
         ul = $("<ul>");
 
@@ -201,7 +197,7 @@ function classSelect(){
         });
 
         $(target).append(ul);
-        $(target).append("<p>Have fun!</p><p>&lt3</p>")
+        $(".inner.cover#usage #icals").show();
     }
     else{
         console.log("select.value -1");
