@@ -89,9 +89,9 @@ Clazz.prototype = {
         curr_url = loc.join("/").replace(/https?:\/\//, "webcal://");
         link = $("<span>")
         container = $("<p>").html(this.simple(false) + ": <br/>").appendTo(link)
-        $("<a>").attr({"href": "SS16/" + this.ical_file_name() + ".ical", "target": "_blank"}).html("iCal herunterladen").appendTo(container) // Make "SS16" dynamic!
+        $("<a>").attr({"href": "SS16/" + this.ical_file_name() + ".ical", "target": "_blank"}).html(".ics herunterladen").appendTo(container) // Make "SS16" dynamic!
         $(container).append("<br>")
-        $("<a>").attr({"href": curr_url + "/SS16/" + this.ical_file_name() + ".ical", "target": "_blank"}).html("webcal in Outlook öffnen").appendTo(container)
+        $("<a>").attr({"href": curr_url + "/SS16/" + this.ical_file_name() + ".ical", "target": "_blank"}).html("webcal öffnen (Outlook)").appendTo(container)
         $(container).appendTo(link)
         if(into != undefined){
             $(link).appendTo(into);
@@ -151,6 +151,7 @@ function loadClasses(){
 
 $(document).ready(function(){
 
+    $(".nojs").hide();
     $(".inner.cover").hide();
     $(".inner.cover#home").show();
     $(".nav li#curr-home").addClass("active");
@@ -183,7 +184,7 @@ function hashChange(){
 }
 function classSelect(){
 
-    target = $(".inner.cover#usage #icals ul#ical-links")
+    target = $(".inner.cover#usage #icals ul#cal-links")
     $(target).html("");
 
     if(String(this.value) && this.value != -1){

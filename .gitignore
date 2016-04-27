@@ -7,4 +7,4 @@ file_for_inspect.rb
 *-test.*
 *.json
 README.html
-export
+export*

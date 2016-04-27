@@ -176,3 +176,8 @@ select {
     list-style: none;
     padding-left: 0;
 }
+
+/* Underline links */
+.inner.cover a:not(.btn) {
+    text-decoration: underline;
+}
