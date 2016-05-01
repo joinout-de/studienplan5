@@ -51,5 +51,22 @@ Clazz = Struct.new(:name, :course, :cert, :jahrgang, :group) do
     def format(str, format="%s", empty="", opts=[])
         StudienplanUtil.format_non_empty(str, format, empty, opts)
     end
+
+    def parent
+        # Jahrgang > Course > Cert > Name > Group
+        ret = self.dup
+        if self.group
+            ret.group = nil
+        elsif self.name
+            ret.name = nil
+        elsif self.cert
+            ret.cert = nil
+        elsif self.course
+            ret.course = nil
+        elsif self.jahrgang
+            ret = nil
+        end
+        ret
+    end
 end
 
