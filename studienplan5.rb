@@ -368,7 +368,7 @@ else
                             #        Weekdays* (or)       The word                          Room Nr/Name                 Lecturer Abbr.
                             #                             "ab" (opt)                        (opt)                        (lazy) (opt)    <----+
                             #        vvvvvvvvvvvvvvvvvvv  vvvvvvvvv                         vvvvvvvvvvvv                 vvvvvvvvvvvvvvv      |
-                            regex = /(#{days.join("|")}) ?(?:ab ?)?((\d{1,2})(\.|:)(\d{2}))?(\[(.*?)\])? ?(.+(?:\(.*?\))?(?:-.{2,3}?)?)?/    #| One Group
+                            regex = /(#{days.join("|")}) ?(?:ab ?)?((\d{1,2})(\.|:)(\d{2}))?(\[(.*?)\])? ?(.+(?:\(.*?\))?(?:-.{2,3}?\W)?)?/    #| One Group
                             #                                      ^^^^^^^^^^^^^^^^^^^^^^^^^               ^^^^^^^^^^^^^^                     |
                             #                                       time (digits separated                 Subject and group(s)   <-----------+
                             #                                       by ":" or ".") (opt)                   group(s) are opt
@@ -609,19 +609,24 @@ else
                                             else
                                                 # A group contain multiple classes, create element for both.
                                                 classes = groups[rowJahrgang][grp[0]]
-                                                classes.each do |groupclazz|
 
-                                                    unless groupclazz.nil? or grp[1].nil? or grp[1].empty?
-                                                        groupclazz = groupclazz.dup
-                                                        groupclazz.group = grp[1]
+                                                if classes
+                                                    classes.each do |groupclazz|
+
+                                                        unless groupclazz.nil? or grp[1].nil? or grp[1].empty?
+                                                            groupclazz = groupclazz.dup
+                                                            groupclazz.group = grp[1]
+                                                        end
+
+                                                        $logger.debug "Class #{groupclazz.simple}, pe_start #{pe_start}"
+
+                                                        pe = PlanElement.new(title, groupclazz, room, pe_start, nil, lect, nr)
+
+                                                        data.store_push pe.clazz, pe
+                                                        planElement.push pe
                                                     end
-
-                                                    $logger.debug "Class #{groupclazz.simple}, pe_start #{pe_start}"
-
-                                                    pe = PlanElement.new(title, groupclazz, room, pe_start, nil, lect, nr)
-
-                                                    data.store_push pe.clazz, pe
-                                                    planElement.push pe
+                                                else
+                                                    $logger.error "We don't know group %s yet! Please fix in XLS manually (row %s/col %s) and re-convert to HTML." % [grp[0].inspect, i, k]
                                                 end
                                             end
                                         end
@@ -633,12 +638,12 @@ else
 
                                     # Catch all the specialities we know. (There are exams without a duration! Who does this?)
                                     #
-                                    #             Special titles $1                                                 Title $4 and room $5 only
-                                    #             vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv                vvvvvvvvvvvvv
-                                    if match7 =~ /(Testat-.*|Refr .*|Info (?:zu )?.*|.*-WP .*|.*KL.*)|(.*)-(\w{2,3})|(.*) ?\[(.*)\]/
-                                        #                                                             ^^^^^^^^^^^^^^
-                                        #                                                             Something $2 with
-                                        #                                                             a lecturer $3
+                                    #             Special titles $1                                                              Title $4 and room $5 only
+                                    #             vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv                vvvvvvvvvvvvv
+                                    if match7 =~ /(Testat-.*|Refr .*|Info (?:zu )?.*|.*-WP .*|.*KL.*|.*-Tutorium)|(.*)-(\w{2,3})|(.*) ?\[(.*)\]/
+                                        #                                                                         ^^^^^^^^^^^^^^
+                                        #                                                                         Something $2 with
+                                        #                                                                         a lecturer $3
 
                                         pe = PlanElement.new($1||$2||$4, rowClass||rowJahrgangClazz, $5, pe_start, nil, (lect = lects[$3]) ? lect : $3)
 
@@ -731,6 +736,7 @@ else
 
             cal = Icalendar::Calendar.new
             cal.prodid = "-Christoph criztovyl Schulz//studienplan5 using icalendar-ruby//DE"
+            cal.timezone.tzid = "Europe/Berlin"
 
             planElements.each do |planElement|
                 planElement.add_to_icalendar cal
