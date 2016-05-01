@@ -109,36 +109,44 @@ OptionParser.new do |opts|
     opts.separator "FILE is a HTMLed XLS Studienplan."
     opts.separator ""
 
-    opts.on("-c", "--calendar", "Generate iCalendar files.") do |c|
+    opts.on("-c", "--calendar", "Generate iCalendar files to \"ical\" directory. (Change with --calendar-dir)") do |c|
         $options[:ical] = c
     end
 
-    opts.on("-j", "--json", "Generate JSON data file.") do |j|
+    opts.on("-j", "--json", "Generate JSON data file (data.json).") do |j|
         $options[:json] = j
     end
 
-    opts.on("--classes", "Generate JSON classes structure.") do |j|
+    opts.on("-d", "--classes", "Generate JSON classes structure (classes.json).") do |j|
         $options[:classes] = j
     end
 
-    opts.on("-o", "--output NAME", "Specify output file/directory name. For calendar this will be the target directory, for JSON it will be the file, with .{data,classes}.json suffix. If ends with slash, will be output directory.") do |o|
+    opts.on("-o", "--output NAME", "Specify output target, if ends with slash, will be output directory. If not, will be name of calendar dir and suffix for JSON files.") do |o|
         $options[:output] = o
     end
 
-    opts.on("-k", "--json-object-keys", "Don't stringify hash keys, preserve them in an extra Array.") do |jok|
-        $options[:jok] = jok
+    opts.on("-k", "--disable-json-object-keys", "Stringify hash keys.") do |jok|
+        $options[:no_jok] = jok
     end
 
-    opts.on("--json-pretty", "Write pretty JSON data.") do |jp|
+    opts.on("-p", "--json-pretty", "Write pretty JSON data.") do |jp|
         $options[:json_pretty] = jp
     end
 
-    opts.on("--web", "Export content in \"web\" diretory, too. Does nothing unless -o is a directory. (\"web\" contains a simple web page that allows a student to select her/his calendars.)") do |web|
+    opts.on("-w", "--web", "Export simple web-page for browsing generated icals. Does nothing unless -o/--output is a directory.") do |web|
         $options[:web] = web
     end
 
-    opts.on("--calendar-dir NAME", "Name for the diretory containing the iCal files.") do |cal_dir|
+    opts.on("-n", "--calendar-dir NAME", "Name for the diretory containing the iCal files.") do |cal_dir|
         $options[:cal_dir] = cal_dir
+    end
+
+    opts.on("-u", "--disable-unified", "Don't create files that contain all parent events recursively.") do |u| # Caution, you'll be the next company we buy!
+        $options[:no_unified] = u
+    end
+
+    opts.on("-a", "--disable-apache-config", "Don't export .htaccess and other Apache-specific customizations.") do |no_apache|
+        $options[:no_apache] = no_apache
     end
 
     opts.on("-h", "--help", "Print this help.") do |h|
@@ -168,7 +176,7 @@ if outp
 end
 
 # JSON data file version
-$data_version = "1.0"
+$data_version = "1.01"
 
 $logger = Logger.new(STDERR)
 $logger.level= Logger::DEBUG
@@ -180,15 +188,21 @@ def data.store_push(key, value)
     self[key].add value
 end
 
-def data.jok
-    #ary = [[], {}]
+# unified: :only_self, :no_self, nil
+#  :only_self : only self elements
+#  :no_self   : append parent elements to calendar (useful when writing divided files in parallel)
+#  nil        : default (self and parent)
+def data.add_to_icalendar(key, cal, unified=nil)
 
-    #self.each do |key,value|
-        #ary[0].push key
-        #ary[1].store ary[0].length-1, value
-    #end
-    #ary
-    StudienplanUtil.json_object_keys(self)
+    unless unified == :no_self
+        self[key].each do |planElement|
+            planElement.add_to_icalendar cal
+        end if self[key]
+    end
+
+    unless unified == :only_self
+        method(__method__).call(key.parent, cal) if key.parent
+    end
 end
 
 def groups.to_s # For debugging :)
@@ -399,7 +413,7 @@ elsif $options[:json] or $options[:ical] or $options[:classes]
                             #        Weekdays* (or)       The word                          Room Nr/Name                 Lecturer Abbr.
                             #                             "ab" (opt)                        (opt)                        (lazy) (opt)    <----+
                             #        vvvvvvvvvvvvvvvvvvv  vvvvvvvvv                         vvvvvvvvvvvv                 vvvvvvvvvvvvvvv      |
-                            regex = /(#{days.join("|")}) ?(?:ab ?)?((\d{1,2})(\.|:)(\d{2}))?(\[(.*?)\])? ?(.+(?:\(.*?\))?(?:-.{2,3}?\W)?)?/    #| One Group
+                            regex = /(#{days.join("|")}) ?(?:ab ?)?((\d{1,2})(\.|:)(\d{2}))?(\[(.*?)\])? ?(.+(?:\(.*?\))?(?:-.{2,3}?\W)?)?/  #| One Group
                             #                                      ^^^^^^^^^^^^^^^^^^^^^^^^^               ^^^^^^^^^^^^^^                     |
                             #                                       time (digits separated                 Subject and group(s)   <-----------+
                             #                                       by ":" or ".") (opt)                   group(s) are opt
@@ -746,45 +760,47 @@ elsif $options[:json] or $options[:ical] or $options[:classes]
 
     if $options[:json]
         json_data = {
-            json_object_keys: $options[:jok] ? true : false,
+            json_object_keys: $options[:no_jok] ? false : true,
             json_data_version: $data_version,
             generated: Time.now,
-            data: $options[:jok] ? StudienplanUtil.json_object_keys(data) : data
+            data: $options[:no_jok] ? data : StudienplanUtil.json_object_keys(data)
         }
+
         $logger.debug "Writing JSON data file \"%s\"" % data_file
+
         File.open(data_file, "w+") do |datafile|
             datafile.puts $options[:json_pretty] ? JSON.pretty_generate(json_data) : JSON.generate(json_data)
         end
+
         $logger.info "Wrote JSON data file \"%s\"" % data_file
     end
 
     if $options[:ical]
+        cal_stub = Icalendar::Calendar.new
+        unified = $options[:unified] ? nil : :only_self
+
+        cal_stub.prodid = "-Christoph criztovyl Schulz//studienplan5 using icalendar-ruby//DE"
+        cal_stub.timezone.tzid = "Europe/Berlin"
+
         Dir.mkdir(ical_dir) unless Dir.exists?(ical_dir)
 
-        data.each do |clazz,planElements|
+        $logger.info "Writing unified calendars." if unified
+
+        data.each_key do |clazz|
 
             $logger.debug "Class: #{clazz}"
 
-            cal = Icalendar::Calendar.new
-            cal.prodid = "-Christoph criztovyl Schulz//studienplan5 using icalendar-ruby//DE"
-            cal.timezone.tzid = "Europe/Berlin"
+            cal = cal_stub.dup
+            clazz_file = ical_dir + File::SEPARATOR + StudienplanUtil.class_ical_name(clazz) + ".ical"
 
-            planElements.each do |planElement|
-                planElement.add_to_icalendar cal
-            end
-
-            #clazz_file = clazz.jahrgang;
-            #clazz_file += "-" + clazz.full_name if clazz.full_name()
-            #clazz_file += "-" + clazz.course if clazz.course
-            #clazz_file += "-" + clazz.cert if clazz.cert
-            clazz_file = StudienplanUtil.class_ical_name clazz
+            clazz_file.gsub!(/\.ical/, ".unified.ical") if unified
+            data.add_to_icalendar clazz, cal
 
             $logger.debug "Writing calendar file \"%s\"" % clazz_file
 
-            cal_file = File.open(ical_dir + File::SEPARATOR + clazz_file + ".ical", "w+")
-            cal_file.puts cal.to_ical
-            cal_file.close
-
+            File.open(clazz_file, "w+") do |f|
+                f.puts cal.to_ical
+            end
         end
 
         $logger.info "Wrote calendar files to \"%s\"" % ical_dir
@@ -792,41 +808,53 @@ elsif $options[:json] or $options[:ical] or $options[:classes]
 
     if $options[:classes]
         json_data = {
-            json_object_keys: $options[:jok] ? true : false,
+            json_object_keys: $options[:no_jok] ? false : true,
             json_data_version: $data_version,
             generated: Time.now,
+            ical_dir: $options[:cal_dir],
+            unified: $options[:unified] ? false : true,
             data: {}
         }
-
         export = json_data[:data]
-
         data.keys.each do |key|
-
             if key.full_name
                 export.store(key, [])
-
                 parent = key
                 while parent = parent.parent
                     export[key].push parent if data.keys.include? parent
                 end
             end
         end
-
-        json_data[:data] = StudienplanUtil.json_object_keys(export) if $options[:jok]
+        json_data[:data] = StudienplanUtil.json_object_keys(export) unless $options[:no_jok]
 
         $logger.debug "Writing JSON classes file \"%s\"" % classes_file
+
         File.open(classes_file, "w+") do |datafile|
             datafile.puts $options[:json_pretty] ? JSON.pretty_generate(json_data) : JSON.generate(json_data)
         end
-        $logger.info "Wrote JSON classes file \"%s\"" % classes_file
 
+        $logger.info "Wrote JSON classes file \"%s\"" % classes_file
     end
 else
+
     $logger.info "Not parsing anything, no switch given that would require that."
 end # file given check
 
 if $options[:web] and $options[:output] and $options[:output].end_with?(?/)
+
     $logger.info "Copying web content to %s" % $options[:output]
+
     FileUtils.cp_r "web/.", $options[:output]
+    if not $options[:no_apache]
+        if Dir.exists? ical_dir
+            FileUtils.mv $options[:output] + File::SEPARATOR + "indexes_header.html", ical_dir
+        else
+            $logger.warn "Target dir for icals does not exists, please specify it's name by --calendar-dir to enable custom Apache indexes style."
+        end
+    else
+        target = $options[:output] + File::SEPARATOR
+        FileUtils.rm [target + ".htaccess", target + "indexes_header.html"]
+    end
+
     $logger.debug "Copied."
 end

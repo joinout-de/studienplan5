@@ -74,20 +74,19 @@
 
                     <div class="inner cover" id="usage">
                         <h1 class="cover-heading">Klasse</h1>
-                        <form action="#">
-                            <select disabled>
-                                <option>Klassen werden geladen, ist JavaScript aktiviert?</option>
-                            </select>
-                        </form>
-                        <p class="nojs">Manuell kannst du die iCals <a href="SS16">hier</a> einsehen.</a>
+                        <p>
+                            <form action="#">
+                                <select disabled>
+                                    <option>Klassen werden geladen, ist JavaScript aktiviert?</option>
+                                </select>
+                            </form>
+                        </p>
+                        <p>Alle .ics-Dateien kannst du <a href="SS16">hier</a> einsehen.</p>
+                        <p><a href="calhelp.html" target="_blank">Zur Hilfe, wie du den Kalendar verwenden kannst.</a></p>
                         <div id="icals" style="display: none;">
                             <h2>ics-Dateien</h2>
-                            <p>Zwei (oder mehr) Dateien,<br>
-                            einmal deine Klasse für Studienveranstaltungen, SPE, Praxis usw.<br>
-                            und dann noch dein Jahrgang für Klausuren.</p>
                             <ul id="cal-links"></ul>
                             <p>Have fun!</p><p>&lt;3</p>
-                            <a href="calhelp.html" target="_blank">Hilfe</a>
                         </div>
                     </div>
 
@@ -113,8 +112,8 @@
                         <div class="inner">
                             <p>Alle Angaben ohne Gewähr.</p>
                             <p><a href="https://github.com/criztovyl/studienplan5" target="_blank">studienplan5</a> by <a href="https://github.com/criztovyl" target="_blank" >@criztovyl</a></p>
-                            <p>Cover template for <a href="http://getbootstrap.com" target="_blank">Bootstrap</a>, by <a href="https://twitter.com/mdo" target="_blank">@mdo</a>.</p>
-                            <p>eMail Spam-protect by <a href="http://joemaller.com/js-mailer.shtml">Joe Maller</a></p>
+                            <p>Cover template for <a href="http://getbootstrap.com" target="_blank">Bootstrap</a> by <a href="https://twitter.com/mdo" target="_blank">@mdo</a></p>
+                            <p>eMail Spam-protect by <a href="http://joemaller.com/js-mailer.shtml">Joe Maller</a> | <a href="https://github.com/alexei/sprintf.js">sprintf.js</a> by <a href="http://alexei.ro/">Alexei</a></p>
                         </div>
                     </div>
 
@@ -132,7 +131,8 @@
             <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
             <script src="ie10-viewport-bug-workaround.js"></script>
 
+            <script type="text/javascript" src="sprintf.min.js"></script>
             <script src="js.js"></script>
-            <script type="text/javascript">loadClasses();</script>
+            <script type="text/javascript">loadClasses("SS16");</script>
     </body>
 </html>

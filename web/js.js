@@ -4,7 +4,7 @@
  * Part of studienplan5, a util to convert HTMLed-XLS Studienplände into iCal files.
  * https://github.com/criztovyl/studienplan5
  */
-var classes, jahrgang, clazz;
+var classes, ical_dir, unified;
 
 function Clazz(name, course, cert, jahrgang, group){
     this.name = name;
@@ -81,33 +81,51 @@ Clazz.prototype = {
         if(this.cert != undefined)
             name += "-" + this.cert;
 
-        return name;
+        if(unified)
+            name += ".unified"
+
+        return name + ".ical"
     },
     ical_file_link: function(into){
-        loc = location.href.split("/")
-        loc.pop()
-        curr_url = loc.join("/").replace(/https?:\/\//, "webcal://");
-        link = $("<span>")
-        container = $("<p>").html(this.simple(false) + ": <br/>").appendTo(link)
-        $("<a>").attr({"href": "SS16/" + this.ical_file_name() + ".ical", "target": "_blank"}).html(".ics herunterladen").appendTo(container) // Make "SS16" dynamic!
+        loc = location.href.split("/"); loc.pop()
+        webcal_url = loc.join("/").replace(/https?:\/\//, "webcal://");
+        links = $("<span>")
+
+        container = $("<p>").html(this.simple(false) + ": <br/>").appendTo(links)
+
+        $("<a>").attr({"href": sprintf("%s/%s", ical_dir, this.ical_file_name()), "target": "_blank"}).html(".ics herunterladen").appendTo(container)
         $(container).append("<br>")
-        $("<a>").attr({"href": curr_url + "/SS16/" + this.ical_file_name() + ".ical", "target": "_blank"}).html("webcal öffnen (Outlook)").appendTo(container)
-        $(container).appendTo(link)
+        $("<a>").attr({"href": sprintf("%s/%s/%s", webcal_url, ical_dir, this.ical_file_name()), "target": "_blank"}).html("webcal öffnen (Outlook)").appendTo(container)
+
+        $(container).appendTo(links)
+
         if(into != undefined){
-            $(link).appendTo(into);
+            $(links).appendTo(into);
             return into;
         }
         else
-        return link;
+        return links;
     }
 }
 
-function loadClasses(){
+function loadClasses(default_ical_dir){
     $.ajax("classes.json").done(function(data){
         console.log("Loaded classes");
         classes = [[],[]]; // 0 - keys, 1 - values
 
-        if (data.json_data_version == "1.0"){
+        json_data_version = data.json_data_version.split(".") // 0 - major, 1 - minor
+
+        if (json_data_version[0] == "1"){
+
+            if(Number(json_data_version[1]) >= 1){
+                ical_dir = data.ical_dir
+                unified = data.unified
+            }
+            else {
+                ical_dir = default_ical_dir || "ical"
+                unified = false
+            }
+
             if(data.json_object_keys){
                 keyys = data["data"][0];
                 values = data["data"][1];
@@ -184,20 +202,19 @@ function hashChange(){
 }
 function classSelect(){
 
-    target = $(".inner.cover#usage #icals ul#cal-links")
-    $(target).html("");
+    target = $($(".inner.cover#usage #icals ul#cal-links"))
+    target.html("");
 
     if(String(this.value) && this.value != -1){
 
-        ul = $("<ul>");
+        classes[0][this.value].ical_file_link($("<li>")).appendTo(target);
 
-        classes[0][this.value].ical_file_link($("<li>")).appendTo(ul);
+        if(!unified){
+            $.each(classes[1][this.value], function(index, element){
+                element.ical_file_link($("<li>")).appendTo(target);
+            });
+        }
 
-        $.each(classes[1][this.value], function(index, element){
-            element.ical_file_link($("<li>")).appendTo(ul);
-        });
-
-        $(target).append(ul);
         $(".inner.cover#usage #icals").show();
     }
     else{

@@ -141,11 +141,11 @@ body {
 @media (min-width: 768px) {
   /* Pull out the header and footer */
   .masthead {
-    position: fixed;
+  /*  position: fixed;*/
     top: 0;
   }
   .mastfoot {
-    position: fixed;
+   /* position: fixed; */
     bottom: 0;
   }
   /* Start the vertical centering */
@@ -180,4 +180,12 @@ select {
 /* Underline links */
 .inner.cover a:not(.btn) {
     text-decoration: underline;
+}
+
+.inner.cover ul:not(#cal-links) {
+    text-align: left;
+}
+
+.loc-warn {
+    font-size: smaller;
 }

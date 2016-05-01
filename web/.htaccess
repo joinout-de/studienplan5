@@ -1,0 +1,4 @@
+Options +Indexes
+HeaderName indexes_header.html
+IndexOptions FancyIndexing
+IndexIgnore indexes_header.html .htaccess
