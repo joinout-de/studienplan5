@@ -141,8 +141,8 @@ body {
 @media (min-width: 768px) {
   /* Pull out the header and footer */
   .masthead {
-  /*  position: fixed;*/
-    top: 0;
+   position: fixed;
+   top: 0;
   }
   .mastfoot {
    /* position: fixed; */
@@ -169,7 +169,7 @@ body {
 }
 
 /* Select font color */
-select {
+input, select {
     color: black;
 }
 #usage ul, #usage li, #contact ul, #contact li {
@@ -188,4 +188,11 @@ select {
 
 .loc-warn {
     font-size: smaller;
+}
+
+table {
+    margin: auto;
+}
+td, th {
+    padding: 0 2px;
 }

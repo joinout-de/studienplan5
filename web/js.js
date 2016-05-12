@@ -89,11 +89,17 @@ Clazz.prototype = {
     ical_file_link: function(into){
         loc = location.href.split("/"); loc.pop()
         webcal_url = loc.join("/").replace(/https?:\/\//, "webcal://");
+
+        ical_link = sprintf("%s/%s", ical_dir, this.ical_file_name())
+
         links = $("<span>")
 
         container = $("<p>").html(this.simple(false) + ": <br/>").appendTo(links)
 
-        $("<a>").attr({"href": sprintf("%s/%s", ical_dir, this.ical_file_name()), "target": "_blank"}).html(".ics herunterladen").appendTo(container)
+        $("<label>").html("URL: ").appendTo(container)
+        $("<input>").attr({"type": "text", "value": window.location.origin + window.location.pathname + ical_link, "disabled": "true"}).appendTo(container)
+        $(container).append("<br>")
+        $("<a>").attr({"href": ical_link, "target": "_blank"}).html(".ics herunterladen").appendTo(container)
         $(container).append("<br>")
         $("<a>").attr({"href": sprintf("%s/%s/%s", webcal_url, ical_dir, this.ical_file_name()), "target": "_blank"}).html("webcal öffnen (Outlook)").appendTo(container)
 
@@ -179,7 +185,7 @@ $(document).ready(function(){
     hashChange();
 
     // protected email script by Joe Maller
-    // modified by Christoph Schulz, 2016
+    // modified by Christoph Schulz, 2016 (For the super paranoid)
     // // JavaScripts available at http://www.joemaller.com
     // // this script is free to use and distribute
     // // but please credit me and/or link to my site

@@ -1,5 +1,5 @@
 *.ical
-xls_src
+*_src
 html_conv
 *_IS_CURRENT
 *~*
@@ -8,3 +8,6 @@ file_for_inspect.rb
 *.json
 README.html
 export*
+web/gc*.png
+remote
+staging

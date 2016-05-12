@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# A utitily to convert HTMLed-XLS Studienpläne into iCal.
+# A utility to convert HTMLed-XLS Studienpläne into iCal.
 # Copyright (C) 2016 Christoph criztovyl Schulz
 #
 # This program is free software: you can redistribute it and/or modify
@@ -34,6 +34,7 @@
 #
 # - nil-checks mostly like "result = myBeNil.method if myBeNil". The same applies for empty-checks.
 # - "init. nested array/hash/whatever" mostly looks like "unless container[mayBeElement]; container[mayBeElement] = []; end"
+# - sometimes I do short-hand if-not-nil-then-else like element = ( element = element.mayBeNil ) ? /* Not nil */ : element /* because element is nil :D */
 ##########
 
 require "nokogiri"
@@ -41,9 +42,11 @@ require "date"
 require "logger"
 require "set"
 require "icalendar"
+require "icalendar/tzinfo"
 require "json/add/struct"
 require "optparse"
 require "fileutils"
+require "tzinfo"
 require "./clazz"
 require "./planelement"
 require "./util"; include StudienplanUtil
@@ -63,27 +66,27 @@ legend = []
 
 # Hash-Array for colors of row headings for jahrgangs.
 # Struc.: Hashes in Array
-# Indices are row parts, keys are colors, values are the jahrgangs (both text)
+# Indices are row parts, keys are colors, values are the jahrgangs (last two are Strings)
 jahrgangsColorKeys = []
 
 # Hash for cell bg-color -> cell type (SPE/ATIW/pratical placement)
-# Keys are colors, values are types.
+# Keys are colors, values are types. Both Strings.
 cellBGColorKeys = {}
 
 # Hash for abbreviated to full lecturers
-# Keys are abbr., values are full lecturers.
+# Keys are abbr., values are full lecturers. Both Strings.
 lects={}
 
 # Hash jahrgang -> group -> class.
-# Struc.: Hash -> Hash -> Set
+# Struc.: Hash -> Hash -> Set (Set in Hash in Hash)
 # Level 1 keys are jahrgangs, level 2 keys groups and elements are classes. Group is a String, both remaining are a Clazzes.
-# Struc.: { jahrgang1: { group1: [class1, class2], group2: [class2] }, jahrgang2: {group1: [class3], group2: [class4] } }
+# Example: { jahrgang1: { group1: [class1, class2], group2: [class2] }, jahrgang2: {group1: [class3], group2: [class4] } }
 groups = {}
 
 # Hash class -> plan element
-# Struc.: { class: [element, ...], ... }
 # Struc.: Hash -> Set
 # Keys are Clazzes, elements are PlanElements
+# Example: { class: [element, element, ...], class: [element, element, ...], ... }
 data = {}
 
 # Flags and counters :)
@@ -96,17 +99,23 @@ days=["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
 
 days_RE_text = "(#{days.join ?|})"
 
+# Default values for options
 ical_dir = "ical"
 data_file = "data.json"
 classes_file = "classes.json"
+default_dur = 3
+
+$logger = Logger.new(STDERR)
+$logger.level= Logger::DEBUG
 
 # Command line opts
 $options = {}
 
 OptionParser.new do |opts|
-    opts.banner = "Usage: %s [options] FILE" % $0
+    opts.banner = "Usage: %s [options] [FILE]" % $0
     opts.separator ""
     opts.separator "FILE is a HTMLed XLS Studienplan."
+    opts.separator "FILE is optional to be able to do -w/--web without reparsing everything."
     opts.separator ""
 
     opts.on("-c", "--calendar", "Generate iCalendar files to \"ical\" directory. (Change with --calendar-dir)") do |c|
@@ -137,15 +146,15 @@ OptionParser.new do |opts|
         $options[:web] = web
     end
 
-    opts.on("-n", "--calendar-dir NAME", "Name for the diretory containing the iCal files.") do |cal_dir|
+    opts.on("-n", "--calendar-dir NAME", "Name for the diretory containing the iCal files. Program exits status 5 if -o/--output is specified and not a directory.") do |cal_dir|
         $options[:cal_dir] = cal_dir
     end
 
-    opts.on("-u", "--disable-unified", "Don't create files that contain all parent events recursively.") do |u| # Caution, you'll be the next company we buy!
+    opts.on("-u", "--disable-unified", "Do not create files that contain all parent events recursively.") do |u| # Caution, you'll be the next company we buy!
         $options[:no_unified] = u
     end
 
-    opts.on("-a", "--disable-apache-config", "Don't export .htaccess and other Apache-specific customizations.") do |no_apache|
+    opts.on("-a", "--disable-apache-config", "Do not export .htaccess and other Apache-specific customizations.") do |no_apache|
         $options[:no_apache] = no_apache
     end
 
@@ -169,19 +178,21 @@ if outp
 
         Dir.mkdir(outp) unless Dir.exists?(outp)
     else
-       ical_dir = outp
-       data_file = outp + ".data.json"
-       classes_file = outp + ".classes.json"
+        ical_dir = outp
+        data_file = outp + ".data.json"
+        classes_file = outp + ".classes.json"
+
+        if $options[:cal_dir]
+            $logger.error "Specified calendar dir name but output is not specified as directory"
+            exit 5
+        end
     end
 end
 
 # JSON data file version
 $data_version = "1.01"
 
-$logger = Logger.new(STDERR)
-$logger.level= Logger::DEBUG
-
-# Hackedy hack hack
+# Hackedy hack hack BEGIN
 
 def data.store_push(key, value)
     unless self[key]; self.store key, Set.new; end
@@ -201,7 +212,7 @@ def data.add_to_icalendar(key, cal, unified=nil)
     end
 
     unless unified == :only_self
-        method(__method__).call(key.parent, cal) if key.parent
+        method(__method__).call(key.parent, cal) if key.parent # Mwahahaha, calls method itself so I won't need to rename here too if I change method name ^^
     end
 end
 
@@ -214,7 +225,7 @@ def groups.to_s # For debugging :)
             classes.each do |clazz|
                 str += "<#{clazz.to_s}> , "
             end
-            str = str[0..str.length-3]
+            str = str[0..str.length-3] # Remove last ", "
             str += "], "
         end
         str = str[0..str.length-3]
@@ -226,7 +237,7 @@ end
 
 class Set
 
-    def to_json(json_ext_generator_state)
+    def to_json(json_ext_generator_state) # TODO Research if we can make parameter nil by default
         self.to_a.to_json(json_ext_generator_state)
     end
 end
@@ -256,7 +267,7 @@ elsif $options[:json] or $options[:ical] or $options[:classes]
     #  4. (empty) (element) (element) ...
     #  5. (jahrgang) (element) (element) ...      : jahrgang looks like "ABB2015"
     #
-    # Normal occurrence: (1.) (2.) (some 4.) (3.) (some 4.). Last three will loop some times. (some times, not sometimes)
+    # Normal occurrence: (1.) (2.) (some 3.) (some 4. with one 5. somewhere). Last one will loop some times. (some times, not sometimes)
 
     $logger.info "Step one"
 
@@ -635,7 +646,7 @@ elsif $options[:json] or $options[:ical] or $options[:classes]
                                         if clazz
                                             $logger.debug "Using defined class #{clazz}"
 
-                                            pe = PlanElement.new(title, clazz, room, pe_start, nil, lect)
+                                            pe = PlanElement.new(title, clazz, room, pe_start, default_dur, lect)
 
                                             data.store_push pe.clazz, pe
                                             planElement.push pe
@@ -665,7 +676,7 @@ elsif $options[:json] or $options[:ical] or $options[:classes]
 
                                                         $logger.debug "Class #{groupclazz.simple}, pe_start #{pe_start}"
 
-                                                        pe = PlanElement.new(title, groupclazz, room, pe_start, nil, lect, nr)
+                                                        pe = PlanElement.new(title, groupclazz, room, pe_start, default_dur, lect, nr)
 
                                                         data.store_push pe.clazz, pe
                                                         planElement.push pe
@@ -726,7 +737,7 @@ elsif $options[:json] or $options[:ical] or $options[:classes]
 
                                 data.store_push pe.clazz, pe
                                 planElement.push pe
-                            elsif not text.empty? # That's the worst case. Log and simple add.
+                            elsif not text.empty? # That's the worst case. Warn and simply add.
                                 $logger.warn "Fall-trough! #{text.inspect}"
                                 pe = PlanElement.FullWeek(text, rowClass||rowJahrgangClazz, nil, start)
 
@@ -776,15 +787,16 @@ elsif $options[:json] or $options[:ical] or $options[:classes]
     end
 
     if $options[:ical]
+        tz=TZInfo::Timezone.get "Europe/Berlin"
         cal_stub = Icalendar::Calendar.new
-        unified = $options[:unified] ? nil : :only_self
+        no_unified = $options[:no_unified] ? :only_self : nil
 
         cal_stub.prodid = "-Christoph criztovyl Schulz//studienplan5 using icalendar-ruby//DE"
-        cal_stub.timezone.tzid = "Europe/Berlin"
+        cal_stub.add_timezone tz.ical_timezone(Time.now)
 
         Dir.mkdir(ical_dir) unless Dir.exists?(ical_dir)
 
-        $logger.info "Writing unified calendars." if unified
+        $logger.info "Writing unified calendars." unless no_unified
 
         data.each_key do |clazz|
 
@@ -793,8 +805,8 @@ elsif $options[:json] or $options[:ical] or $options[:classes]
             cal = cal_stub.dup
             clazz_file = ical_dir + File::SEPARATOR + StudienplanUtil.class_ical_name(clazz) + ".ical"
 
-            clazz_file.gsub!(/\.ical/, ".unified.ical") if unified
-            data.add_to_icalendar clazz, cal
+            clazz_file.gsub!(/\.ical/, ".unified.ical") unless no_unified
+            data.add_to_icalendar clazz, cal, no_unified
 
             $logger.debug "Writing calendar file \"%s\"" % clazz_file
 
@@ -812,7 +824,7 @@ elsif $options[:json] or $options[:ical] or $options[:classes]
             json_data_version: $data_version,
             generated: Time.now,
             ical_dir: $options[:cal_dir],
-            unified: $options[:unified] ? false : true,
+            unified: $options[:no_unified] ? false : true,
             data: {}
         }
         export = json_data[:data]
@@ -844,17 +856,21 @@ if $options[:web] and $options[:output] and $options[:output].end_with?(?/)
 
     $logger.info "Copying web content to %s" % $options[:output]
 
+    sep = File::SEPARATOR
+    o = $options[:output] + sep
+
     FileUtils.cp_r "web/.", $options[:output]
     if not $options[:no_apache]
         if Dir.exists? ical_dir
-            FileUtils.mv $options[:output] + File::SEPARATOR + "indexes_header.html", ical_dir
+            FileUtils.mv o + "indexes_header.html", ical_dir
+            FileUtils.cp o + "cover.css", ical_dir + sep + "indexes_css.css"
         else
-            $logger.warn "Target dir for icals does not exists, please specify it's name by --calendar-dir to enable custom Apache indexes style."
+            $logger.info "Target dir for icals does not exist, please specify it's name by --calendar-dir to enable custom Apache indexes style."
         end
     else
-        target = $options[:output] + File::SEPARATOR
-        FileUtils.rm [target + ".htaccess", target + "indexes_header.html"]
+        FileUtils.rm [o + ".htaccess", o + "indexes_header.html"]
     end
 
+    $logger.warn "You haven't exported classes (-d/--classes) yet but they are required by -w/--web!" unless File.exists?(o+"classes.json")
     $logger.debug "Copied."
 end

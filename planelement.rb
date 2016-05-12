@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby 
-# Part of utitily to convert HTMLed-XLS studienpläne into iCals. 
+# Part of utility to convert HTMLed-XLS studienpläne into iCals.
 # Copyright (C) 2016 Christoph criztovyl Schulz 
 # 
 # This program is free software: you can redistribute it and/or modify 
@@ -65,7 +65,7 @@ PlanElement = Struct.new(:title, :clazz, :room, :time, :dur, :lect, :nr, :specia
 
     public
     def add_to_icalendar(icalendar)
-
+        tzid=icalendar.timezones[0].tzid.to_s
         icalendar.event do |evt|
 
             title = format(self.title)
@@ -74,24 +74,24 @@ PlanElement = Struct.new(:title, :clazz, :room, :time, :dur, :lect, :nr, :specia
 
             nr = format(self.nr, "#%s")
             room = format(self.room)
-            lect = format(self.lect, "Dozent: %s.")
+            lect = format(self.lect, "Dozent: %s. ")
 
             dtend = self.time + 5 if self.special == :fullWeek
 
 
-            evt.dtstart = self.time
+            evt.dtstart = Icalendar::Values::DateTime.new self.time, 'tzid' => tzid
 
             if dtend
-                evt.dtend = dtend
+                evt.dtend = Icalendar::Values::DateTime.new dtend, 'tzid' => tzid
             elsif self.dur
-                evt.dtend = self.time + self.dur/24
+                evt.dtend = Icalendar::Values::DateTime.new self.time + self.dur/24.0, 'tzid' => tzid
             else
-                evt.dtend = self.time
+                evt.dtend = Icalendar::Values::DateTime.new self.time + 1.0/60/24, 'tzid' => tzid # Events must have end thats not equal to start, set dur 1 min
             end
 
             evt.summary = title + nr
             evt.location = room
-            evt.description = "#{lect}#{more}#{clazz}"
+            evt.description = "#{lect}#{more}#{clazz}" + ( ( dtend or self.dur ) ? "" : "\nNo end time defined, set duration to 1 minute." )
 
             #evt.uid = "de.joinout.criztovyl.studienplan5.planElement." + self.clazz.id_str + "." + title+nr # TODO: UID. This is not unique, find something.
         end

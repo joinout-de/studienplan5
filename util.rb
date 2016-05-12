@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby 
-# Part of utitily to convert HTMLed-XLS studienpläne into iCals. 
+# Part of utility to convert HTMLed-XLS studienpläne into iCals.
 # Copyright (C) 2016 Christoph criztovyl Schulz 
 # 
 # This program is free software: you can redistribute it and/or modify 
