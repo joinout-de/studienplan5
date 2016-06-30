@@ -6,4 +6,4 @@ export*
 web/gc*.png
 remote
 staging
-src_data
+data
