@@ -1,13 +1,9 @@
-*.ical
-*_src
-html_conv
 *_IS_CURRENT
 *~*
 file_for_inspect.rb
 *-test.*
-*.json
-README.html
 export*
 web/gc*.png
 remote
 staging
+src_data
