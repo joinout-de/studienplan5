@@ -17,10 +17,10 @@
 
 require "./util"; include StudienplanUtil
 
-Struct.new("Plan", :name, :clazz, :elements)
+Plan = Struct.new("Plan", :name, :clazz, :elements)
 
 # This is the struct for storing event information
-Struct.new("PlanElement", :title, :clazz, :room, :time, :dur, :lect, :nr, :special, :more) do
+PlanElement = Struct.new("PlanElement", :title, :clazz, :room, :time, :dur, :lect, :nr, :special, :more) do
 
     def self.FullWeek(title, clazz, room, date, more=nil)
         #                                         dur  lect  nr

@@ -87,7 +87,7 @@ copy_src_file()
         $callback "$src" "$file"
         rm -f "$file"
     else
-        exit 1
+        return 1
     fi
 }
 
@@ -135,7 +135,7 @@ case "$Action" in
             ( cd "$HTML_DIR" && ln -fs "`basename "$(replace_suffix "$xls_file" .html)"`" "$(replace_suffix "$src_name" .html)"; )
         }
 
-        copy_src_file "$Src" "$XLS_DIR/$New_Src_Name" "$HTML_DIR/$(replace_suffix "$Src_Name" .html)" parse_moodle_xls $Overwrite || already_there_msg $EXIT_MOODLE_ALREADY_THERE
+        copy_src_file "$Src" "$XLS_DIR/$New_Src_Name" "$HTML_DIR/$(replace_suffix "$Src_Name" .html)" parse_moodle_xls $Overwrite || echo `already_there_msg $EXIT_MOODLE_ALREADY_THERE`
         ;;
     ausbplan|ausb_plan|ausbildungsplan)
 
@@ -152,7 +152,7 @@ case "$Action" in
 
             # https://github.com/tabulapdf/tabula-java (Pure Java) or https://github.com/tabulapdf/tabula-extractor (JRuby)
             # -rf is not --recursive --force, it's --spreadsheet --format ;)
-            tabula -rf JSON "$pdf_file" > "$json_file"
+            tabula -ruf JSON "$pdf_file" > "$json_file"
 
             # tabula seems to produce invalid JSON. Make it valid.
             sed 's/\]\]\[\[/\],\[/g' -i "$json_file"
