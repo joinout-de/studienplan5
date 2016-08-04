@@ -1,9 +1,20 @@
-*_IS_CURRENT
+# Backup files
 *~*
+*.dia.autosave
+
+# Testing
 file_for_inspect.rb
+*-test/
 *-test.*
 export*
+prog.rb
+
+# Other
 web/gc*.png
+
+# Publishing
 remote
 staging
+local
 data
+.gi_*
