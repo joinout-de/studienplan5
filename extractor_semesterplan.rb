@@ -35,6 +35,7 @@
 # - nil-checks mostly like "result = myBeNil.method if myBeNil". The same applies for empty-checks.
 # - "init. nested array/hash/whatever" mostly looks like "unless container[mayBeElement]; container[mayBeElement] = []; end"
 # - sometimes I do short-hand if-not-nil-then-else like element = ( element = element.mayBeNil ) ? /* Not nil */ : element /* because element is nil :D */
+# - yeah, this codes handles HTML and uses RegEx. But not to parse the HTML. Don't parse HTML with RegEx!
 ##########
 
 require "nokogiri"
