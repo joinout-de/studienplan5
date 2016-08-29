@@ -158,8 +158,15 @@ function loadClasses(default_ical_dir){
 
                     });
 
-                    $(".inner.cover#usage select").removeAttr("disabled");
+                    $(select).removeAttr("disabled");
                     $(select).on("change", classSelect);
+
+                    if(getHashSelection() && select && select[0]){
+                        $(select)[0].selectedIndex = Number(getHashSelection());
+                        console.log("loadClasses / Hash Selection:");
+                        console.log(getHashSelection());
+                        $(select).change();
+                    }
                 });
             }
             else {
@@ -197,14 +204,56 @@ $(document).ready(function(){
 
 });
 
-function hashChange(){
+var noHashChange = 0;
+function hashChange(evt){
+
+    if(noHashChange == 0){
+
+        console.log("Hash change!");
+
         target = window.location.hash; // Location hash incl. #. Keep it.
         if(String(target)){
             $(".inner.cover").hide();
+
+            selection_match = target.match(/-selection-(\d+)$/);
+            if(selection_match) target = target.replace(selection_match[0], "");
+
             $(".inner.cover"  + target).show();
             $(".nav li.active").removeClass("active");
             $(".nav li#curr-" + target.replace("#", "")).addClass("active");
+
+            if(selection_match){
+                select = $(".inner.cover#usage select");
+                if(select && select[0] && !select[0].disabled){
+                    console.log("hashChange / getHashSelection:");
+                    console.log(getHashSelection());
+                    $(select)[0].selectedIndex = Number(getHashSelection());
+                    $(select).change();
+                }
+            }
         }
+    }
+    else {
+        console.log("noHashChange +" + (noHashChange-1));
+        noHashChange--;
+    }
+}
+
+var hashSelectionRE = /-selection-(\d+)$/;
+
+function getHashSelection(){
+    match = document.location.hash.match(hashSelectionRE);
+    return match ? match[1] : match // It's undefined? Return undefined.
+}
+
+function setHashSelection(selectedIndex){
+    noHashChange = 2;
+    removeHashSelection();
+    location.hash = location.hash + "-selection-" + selectedIndex;
+}
+
+function removeHashSelection(){
+    location.hash = location.hash.replace(hashSelectionRE, "");
 }
 function classSelect(){
 
@@ -222,8 +271,10 @@ function classSelect(){
         }
 
         $(".inner.cover#usage #icals").show();
+        setHashSelection(this.selectedIndex);
     }
     else{
+        $(".inner.cover#usage #icals").hide();
         console.log("select.value -1");
     }
 }
