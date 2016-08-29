@@ -126,6 +126,7 @@ function loadClasses(default_ical_dir){
             if(Number(json_data_version[1]) >= 1){
                 ical_dir = data.ical_dir;
                 unified = data.unified;
+                default_ical_dir && console.info("Called loadClasses with a parameter but classes.json is new enough.");
             }
             else {
                 ical_dir = default_ical_dir || "ical";
@@ -174,7 +175,7 @@ function loadClasses(default_ical_dir){
             }
         }
         else {
-            console.error("Unknown JSON data version.");
+            console.error("Unknown/Unspported JSON data version: " + json_data_version.join("."));
         }
 
     });
