@@ -1,20 +1,20 @@
-#!/usr/bin/env ruby 
+#!/usr/bin/env ruby
 # Part of utility to convert HTMLed-XLS studienpläne into iCals.
-# Copyright (C) 2016 Christoph criztovyl Schulz 
-# 
-# This program is free software: you can redistribute it and/or modify 
-# it under the terms of the GNU General Public License as published by 
-# the Free Software Foundation, either version 3 of the License, or 
-# (at your option) any later version. 
-# 
-# This program is distributed in the hope that it will be useful, 
-# but WITHOUT ANY WARRANTY; without even the implied warranty of 
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
-# GNU General Public License for more details. 
-# 
-# You should have received a copy of the GNU General Public License 
-# along with this program. If not, see <http://www.gnu.org/licenses/>. 
- 
+# Copyright (C) 2016 Christoph criztovyl Schulz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 
 # This is a util module.
 module StudienplanUtil
@@ -38,7 +38,7 @@ module StudienplanUtil
     end
 
     def format_non_empty(obj, format="%s", empty="", opts=[])
-        if obj.class.name == String.name 
+        if obj.class.name == String.name
             if obj.empty?
                 ""
             else
@@ -67,6 +67,16 @@ module StudienplanUtil
             ary[1].store ary[0].length-1, value
         end
         ary
+    end
+
+    def arrayify(o)
+        if o.class.name == [].class.name
+            o
+        elsif o.respond_to? :to_a
+            o.to_a
+        else
+            [o]
+        end
     end
 end
 

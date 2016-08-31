@@ -14,7 +14,7 @@ def multidays(text)
     regex = /#{days_RE_or} ?(?:ab ?)?((\d{1,2})(\.|:)(\d{2}))?(\[(.*?)\])? ?(.+(?:\(.*?\))?(?:-.{2,3}?)?)?/
     scan1 = text.scan regex
     scan2 = text.split(" ")[0].scan(/#{days_RE_or}/)
-    
+
     #puts scan1[0].to_s
 
     if scan1.length == scan2.length
@@ -25,7 +25,7 @@ def multidays(text)
         sep = nil
         lastDay = false
         text_.split(/#{days_RE_or}/).each do |part|
-            
+
            if part =~ /^#{days_RE_or}$/
                mdays.push part
                lastDay = true
