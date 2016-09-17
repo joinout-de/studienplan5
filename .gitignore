@@ -14,8 +14,6 @@ bower_components
 web/gc*.png
 
 # Publishing
-remote
-staging
-local
 data
+publishing
 .gi_*
