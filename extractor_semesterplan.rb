@@ -48,8 +48,8 @@ require "./util"; include StudienplanUtil
 # Hackedy hack hack
 class Set
 
-    def to_json(json_ext_generator_state) # TODO Research if we can make parameter nil by default
-        self.to_a.to_json(json_ext_generator_state)
+    def to_json(opts = nil)
+        self.to_a.to_json(opts)
     end
 end
 
@@ -59,7 +59,7 @@ class SemesterplanExtractor
 
     def initialize(file)
         @file = file
-        @data = nil
+        @data = Plan.new("Semsterplan")
     end
 
     def extract
@@ -96,12 +96,6 @@ class SemesterplanExtractor
         # Example: { jahrgang1: { group1: [class1, class2], group2: [class2] }, jahrgang2: {group1: [class3], group2: [class4] } }
         groups = {}
 
-        # Hash class -> plan element
-        # Struc.: Hash -> Set
-        # Keys are Clazzes, elements are PlanElements
-        # Example: { class: [element, element, ...], class: [element, element, ...], ... }
-        data = {}
-
         # Flags and counters :)
         r=0 # Row
         w=-1 # Table wrap
@@ -118,15 +112,7 @@ class SemesterplanExtractor
         $logger = Logger.new(STDERR)
         $logger.level= Logger::DEBUG
 
-        # Command line opts
-        $options = {}
-
         # Hackedy hack hack BEGIN
-
-        def data.store_push(key, value)
-            unless self[key]; self.store key, Set.new; end
-            self[key].add value
-        end
 
         def groups.to_s # For debugging :)
             str = "{ "
@@ -221,6 +207,7 @@ class SemesterplanExtractor
         # Cell BG color assoc., legend 7 is the color key, 8 the name.
         # Only cells 12..14
         # TODO: Somehow detertime non-hard-coded or use command line arg. (Currently preferring arg., but requires user interaction, preferring automatic execution)
+        # @TODO Forget it. It's static, it's okay the way it is.
 
         for n in 12..14
             cellBGColorKeys.store(legend[7][n]["bgcolor"], legend[8][n].text)
@@ -242,7 +229,8 @@ class SemesterplanExtractor
         $logger.info "Step two."
 
         # Remeber the struct? It's row -> row part -> element
-        @data = plan.map.with_index do |row, i|
+        # TODO: Replace .map with .each
+        plan.map.with_index do |row, i|
 
             # First two rows are headings only (1. and 2. from above)
             if i > 1
@@ -280,7 +268,6 @@ class SemesterplanExtractor
 
                         elementTexts = element.search("text()")
 
-                        planElement = [] # Do we still need this? Havn't we data?
                         comment = nil
                         redo_queue = []
 
@@ -288,10 +275,8 @@ class SemesterplanExtractor
                         if elementType
                             $logger.debug "Type: #{elementType.inspect}"
 
-                            pe = PlanElement::FullWeek(elementType, rowClass, nil, start)# nil = room
+                            @data.add_full_week(elementType, rowClass, nil, start)# nil = room
 
-                            data.store_push pe.clazz, pe
-                            planElement.push  pe
                         end
 
                         elementTexts.each do |textElement|
@@ -322,13 +307,13 @@ class SemesterplanExtractor
 
                                 # This is RegEx for (element), as mentioned above
                                 #
-                                #        Weekdays* (or)       The word                          Room Nr/Name                 Lecturer Abbr.
-                                #                             "ab" (opt)                        (opt)                        (lazy) (opt)    <----+
-                                #        vvvvvvvvvvvvvvvvvvv  vvvvvvvvv                         vvvvvvvvvvvv                 vvvvvvvvvvvvvvv      |
-                                regex = /(#{days.join("|")}) ?(?:ab ?)?((\d{1,2})(\.|:)(\d{2}))?(\[(.*?)\])? ?(.+(?:\(.*?\))?(?:-.{2,3}?\W)?)?/  #| One Group
-                                #                                      ^^^^^^^^^^^^^^^^^^^^^^^^^               ^^^^^^^^^^^^^^                     |
-                                #                                       time (digits separated                 Subject and group(s)   <-----------+
-                                #                                       by ":" or ".") (opt)                   group(s) are opt
+                                #        Weekdays* (or)           The word                          Room Nr/Name                 Lecturer Abbr.
+                                #                                 "ab" (opt)                        (opt)                        (lazy) (opt)    <----+
+                                #        vvvvvvvvvvvvvvvvvvv      vvvvvvvvv                         vvvvvvvvvvvv                 vvvvvvvvvvvvvvv      |
+                                regex = /(#{days.join("|")})[\. ]?(?:ab ?)?((\d{1,2})(\.|:)(\d{2}))?(\[(.*?)\])? ?(.+(?:\(.*?\))?(?:-.{2,3}?\W)?)?/  #| One Group
+                                #                                          ^^^^^^^^^^^^^^^^^^^^^^^^^               ^^^^^^^^^^^^^^                     |
+                                #                                           time (digits separated                 Subject and group(s)   <-----------+
+                                #                                           by ":" or ".") (opt)                   group(s) are opt
                                 # * TODO: Replace with days_RE_text.
 
 
@@ -423,7 +408,7 @@ class SemesterplanExtractor
 
 
                                     if hours and minutes
-                                        pe_start += Rational(hours,24) + Rational(minutes,1440)  # 24*60=1440
+                                        pe_start += Rational(hours,24) + Rational(minutes,1440)  # 24h * 60min = 1440min
                                     end
 
                                     # Check what remaining information is there(if-else)
@@ -456,7 +441,7 @@ class SemesterplanExtractor
                                         # Group is class
                                         if group =~ /^(\w{2}\d{3})$/ # Class regex
                                             $logger.debug "Class #{$1} in group"
-                                            groups[rowJahrgang].each do |group_, classes|
+                                            groups[rowJahrgang].each do |group_, classes| # group_ to prevent shadowing. Creates ugly warning.
                                                 classes.each do |clazz_|
                                                     if clazz_.name == $1
                                                         clazz = clazz_
@@ -465,7 +450,7 @@ class SemesterplanExtractor
                                             end
                                         end
                                         #
-                                        # Prep. from group as nr. 0
+                                        # Preperation from group as nr. 0
                                         prep="vor1"
                                         if group.include? prep
                                             group.gsub! prep, "0"
@@ -483,12 +468,12 @@ class SemesterplanExtractor
                                         # Exams. Groups = duration. We can receive more info from comment.
                                         if title =~ /(KL-.*|.*-KL|WP .*|-WP .*)/i or group =~ /^\d+$/
 
-                                            $logger.debug "Klausur/Wahlpflicht #{title.inspect} #{group.inspect} (#{comment.inspect})"
+                                            $logger.debug "Klausur/Wahlpflicht #{title.inspect} #{group.inspect} (#{comment.inspect})" # #inspect to see non-printing chars (\r, \n)
 
                                             room = nil
 
                                             room_RE = / ?Raum (.*)/
-                                            if ( comment =~ room_RE )
+                                            if ( comment =~ room_RE ) # Huh, are the parenthesis required?
                                                 comment.gsub! room_RE, ""
                                                 room = $1
                                             end
@@ -531,12 +516,9 @@ class SemesterplanExtractor
                                                     clazz = rowJahrgangClazz.dup
                                                     clazz.course = course_name
 
-                                                    pe = PlanElement.new(title, clazz, room, pe_start, dur_, nil, nil, nil, comment)
+                                                    $logger.debug "Clazz: #{clazz}, Comment: #{comment.inspect}"
 
-                                                    $logger.debug "Clazz: #{clazz}, Comment: #{pe.more.inspect}"
-
-                                                    data.store_push(pe.clazz, pe)
-                                                    planElement.push(pe)
+                                                    @data.push({title: title, class: clazz, room: room, time: pe_start, dur: dur_, more: comment})
                                                 end
                                             end
                                         else # No exam, groups = groups
@@ -547,10 +529,7 @@ class SemesterplanExtractor
                                             if clazz
                                                 $logger.debug "Using defined class #{clazz}"
 
-                                                pe = PlanElement.new(title, clazz, room, pe_start, default_dur, lect)
-
-                                                data.store_push pe.clazz, pe
-                                                planElement.push pe
+                                                @data.push({title: title, class: clazz, room: room, time: pe_start, dur: default_dur, lect: lect})
                                                 next # Huh, these jumping again.
                                             end
 
@@ -577,10 +556,7 @@ class SemesterplanExtractor
 
                                                             $logger.debug "Class #{groupclazz.simple}, pe_start #{pe_start}"
 
-                                                            pe = PlanElement.new(title, groupclazz, room, pe_start, default_dur, lect, nr)
-
-                                                            data.store_push pe.clazz, pe
-                                                            planElement.push pe
+                                                            @data.push({title: title, class: groupclazz, room: room, time: pe_start, dur: default_dur, lect: lect, nr: nr})
                                                         end
                                                     else
                                                         $logger.error "We don't know group %s yet! Please fix in XLS manually (row %s/col %s) and re-convert to HTML." % [grp[0].inspect, i, k]
@@ -602,18 +578,13 @@ class SemesterplanExtractor
                                             #                                                                         Something $2 with
                                             #                                                                         a lecturer $3
 
-                                            pe = PlanElement.new($1||$2||$4, rowClass||rowJahrgangClazz, $5, pe_start, nil, (lect = lects[$3]) ? lect : $3)
+                                            @data.push({title: $1||$2||$4, class: rowClass||rowJahrgangClazz, room: $5, time: pe_start, lect: (lect = lects[$3]) ? lect : $3})
 
-                                            data.store_push pe.clazz, pe
-                                            planElement.push pe
                                         else # Currently have no example for this in mind, sry. But it's not special. That's good, isn't it? (Found one: "Präs-WP BI2")
-                                            pe = PlanElement.new(match7, rowClass||rowJahrgangClazz, nil, pe_start, nil)
-
-                                            data.store_push pe.clazz, pe
-                                            planElement.push pe
+                                            @data.push({title: match7, class: rowClass||rowJahrgangClazz, time: pe_start})
                                         end
 
-                                        $logger.info "#{match7} as #{planElement.last.inspect}."
+                                        $logger.info "#{match7} with title #{match7}, class #{rowClass||rowJahrgangClazz}, time #{pe_start}."
                                     end # We're done with the information.
 
                                     # The redo queue I mentioned.
@@ -626,31 +597,23 @@ class SemesterplanExtractor
                                     $logger.debug "Title #{$1.inspect} and Room #{$2.inspect} only. Comment #{comment.inspect}"
 
                                     # If we have another full-week-event, replace it.
-                                    planElement.delete_if do |e|
-                                        e.title == elementType
+                                    @data.elements.delete_if do |e|
+                                        e[:title] == elementType and e[:time] == start
                                     end
-                                    # Same here
-                                    data[pe.clazz].delete_if do |e|
-                                        e.title == elementType and e.time == start
-                                    end if data[pe.clazz]
 
-                                    pe = PlanElement.FullWeek($1, rowClass, $2, start, comment)
+                                    @data.add_full_week($1, rowClass, $2, start, comment)
 
-                                    data.store_push pe.clazz, pe
-                                    planElement.push pe
                                 elsif not text.empty? # That's the worst case. Warn and simply add.
                                     $logger.warn "Fall-trough! #{text.inspect}"
-                                    pe = PlanElement.FullWeek(text, rowClass||rowJahrgangClazz, nil, start)
+                                    @data.add_full_week(text, rowClass||rowJahrgangClazz, nil, start)
 
-                                    data.store_push pe.clazz, pe
-                                    planElement.push pe
                                 end
                             end # ignore "Gruppe" texts
                         end if elementTexts # element texts iteration
-                        planElement # return to block
                     end # elements iteration
                 end # parts iteration
             end # skip first two rows
         end # rows iteration
+        @data # return from method
     end
 end

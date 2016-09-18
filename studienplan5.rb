@@ -239,6 +239,8 @@ if data
 
         $logger.info "Wrote JSON classes file \"%s\"" % classes_file
     end
+else
+    $logger.info "No data"
 end
 
 if $options[:web] and $options[:output] and $options[:output].end_with?(?/)

@@ -69,4 +69,3 @@ module StudienplanUtil
         ary
     end
 end
-
