@@ -145,16 +145,15 @@ if file = ARGV[0]
 end
 
 # JSON data file version
-$data_version = "1.01"
+$data_version = "1.02"
 
 if data
 
     if $options[:json]
         json_data = {
-            json_object_keys: $options[:no_jok] ? false : true,
             json_data_version: $data_version,
             generated: Time.now,
-            data: $options[:no_jok] ? data : StudienplanUtil.json_object_keys(data)
+            data: data.elements
         }
 
         $logger.debug "Writing JSON data file \"%s\"" % data_file
@@ -208,20 +207,23 @@ if data
 
     if $options[:classes]
         json_data = {
-            json_object_keys: $options[:no_jok] ? false : true,
             json_data_version: $data_version,
             generated: Time.now,
             ical_dir: $options[:cal_dir],
             unified: $options[:no_unified] ? false : true,
             data: {}
         }
-        export = json_data[:data]
-        data.keys.each do |key|
-            if key.full_name
+        export = json_data[:data] # TODO Do we still require this as an extra variable?
+
+        # Build classes structure. Keys are Clazzes and value array elements are parents.
+        data.extra[:classes].each do |key|
+            if key.full_name # TODO What's this? What does it check?
                 export.store(key, [])
+                #
+                # Loop through parents until none is left
                 parent = key
                 while parent = parent.parent
-                    export[key].push parent if data.keys.include? parent
+                    export[key].push parent #if data.extra[:classes].include? parent
                 end
             end
         end

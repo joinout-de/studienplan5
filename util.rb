@@ -59,13 +59,20 @@ module StudienplanUtil
         name
     end
 
-    def json_object_keys(hash)
-        ary = [[], {}]
+    # See README, JSON object keys
+    def json_object_keys(object)
 
-        hash.each do |key,value|
-            ary[0].push key
-            ary[1].store ary[0].length-1, value
+        if object.class == {}.class
+            new_obj = {json_object_keys: true, keys: [], values: {}}
+
+           object.each do |key,value|
+               new_obj[:keys].push key
+               new_obj[:values].store new_obj[:keys].length-1, value
+           end
+           new_obj # return
+        else
+            $logger.error "#{__method__} can handly Hashes only!"
+            $logger.debug "Object class was: #{object.class}"
         end
-        ary
     end
 end

@@ -20,11 +20,12 @@ require "./util"; include StudienplanUtil
 
 class Plan
 
-    attr_reader :name, :elements 
+    attr_reader :name, :elements, :extra
 
-    def initialize(name, elements = [])
+    def initialize(name, elements = [], extra = {})
         @elements = elements ? elements : [] # An array of {}'s
         @name = name
+        @extra = extra ? extra : {}
     end
 
     def push_element(fields)
@@ -42,17 +43,17 @@ class Plan
         push({title: title, class: clazz, room: room, time: time, dur: dur, lect: lect, special: special, more: more})
     end
 
-    def to_json(json_ext_generator_state = nil) # Yup, we can make it nil.
-        return JSON.generate({name: @name, elements: @elements}, json_ext_generator_state)
+    def to_json(opts = nil) # Yup, we can make it nil.
+        return JSON.generate({name: @name, elements: @elements, extra: @extra}, opts)
     end
 
     def Plan.from_json(json_string)
-        json = JSON.load json_string
-        return self.new(json["name"], json["elements"]) # Self is not a Plan instance, it's the Plan instance of Class.
+        json = JSON.parse json_string, :symbolize_names => true
+        return self.new(json[:name], json[:elements], json[:extra]) # Self is not a Plan instance, it's the Plan instance of Class.
     end
 
     def to_s
-        "Plan \"#{@name}\". Elements:#{$/ + @elements.join($/)}"
+        "Plan \"#{@name}\". Elements:#{$/ + @elements.join($/) + $/}Extra: #{@extra}"
     end
 
 end

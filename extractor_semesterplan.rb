@@ -86,6 +86,9 @@ class SemesterplanExtractor
         # Keys are colors, values are types. Both Strings.
         cellBGColorKeys = {}
 
+        # Set for all classes
+        @data.extra[:classes] = Set.new
+
         # Hash for abbreviated to full lecturers
         # Keys are abbr., values are full lecturers. Both Strings.
         lects={}
@@ -295,6 +298,8 @@ class SemesterplanExtractor
                                 group = $4
 
                                 rowClass = Clazz.new(name, course, cert, rowJahrgang)
+
+                                @data.extra[:classes].add rowClass
 
                                 unless groups[rowJahrgang]; groups.store(rowJahrgang, {}); end
                                 unless groups[rowJahrgang][group]; groups[rowJahrgang].store group, Set.new; end
@@ -554,9 +559,12 @@ class SemesterplanExtractor
                                                                 groupclazz.group = grp[1]
                                                             end
 
+                                                            # TODO Why there's a nil check but below we use groupclazz even if it's nil? Huh?
+
                                                             $logger.debug "Class #{groupclazz.simple}, pe_start #{pe_start}"
 
                                                             @data.push({title: title, class: groupclazz, room: room, time: pe_start, dur: default_dur, lect: lect, nr: nr})
+                                                            @data.extra[:classes].add(groupclazz)
                                                         end
                                                     else
                                                         $logger.error "We don't know group %s yet! Please fix in XLS manually (row %s/col %s) and re-convert to HTML." % [grp[0].inspect, i, k]
