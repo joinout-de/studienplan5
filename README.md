@@ -84,7 +84,7 @@ Any object that has a `json_object_keys` set to true has the following structure
     - "%Y-%m-%d %H:%M:%S %z" (strftime)
 * `Element`: Object. Well-known keys (expect `null` values):
     - title: String, never `null`
-    - class: `Class`, never `null`
+    - class: `Clazz`, never `null`
     - room: String
     - time: String, never `null`
     - dur: String, Rationale, e.g. `"3/4"`; Duration (either this or `special: "fullWeek"` is always set)
