@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/PR-SVG-20010719/DTD/svg10.dtd">
-<svg width="52cm" height="26cm" viewBox="-222 414 1033 506" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg width="52cm" height="30cm" viewBox="-222 414 1033 594" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
   <g>
     <rect style="fill: #ffffff" x="-220.948" y="495.522" width="341.1" height="44"/>
     <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="-220.948" y="495.522" width="341.1" height="44"/>
@@ -36,34 +36,39 @@
     <rect style="fill: #ffffff" x="407.29" y="492.294" width="402.7" height="28"/>
     <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="407.29" y="492.294" width="402.7" height="28"/>
     <text font-size="16" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:700" x="608.64" y="511.294">Plan</text>
-    <rect style="fill: #ffffff" x="407.29" y="520.294" width="402.7" height="134"/>
-    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="407.29" y="520.294" width="402.7" height="134"/>
+    <rect style="fill: #ffffff" x="407.29" y="520.294" width="402.7" height="185"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="407.29" y="520.294" width="402.7" height="185"/>
     <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="534.294">-name: String</text>
     <text font-size="11.2" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:italic;font-weight:normal" x="410.29" y="548.794">e.g. WS2015/16, SS2016, ...</text>
-    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="571.294">+elements: Hash[]</text>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="571.294">-elements: Hash[]</text>
     <text font-size="11.2" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:italic;font-weight:normal" x="410.29" y="585.794">An Array of Hashes.  (HashMap,</text>
     <text font-size="11.2" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:italic;font-weight:normal" x="410.29" y="599.794">Dictionary, whatever)</text>
     <text font-size="11.2" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:italic;font-weight:normal" x="410.29" y="613.794">Common keys: title, class, room, time,</text>
     <text font-size="11.2" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:italic;font-weight:normal" x="410.29" y="627.794">dur, lect, nr, special, more</text>
     <text font-size="11.2" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:italic;font-weight:normal" x="410.29" y="641.794">(Ruby: Keys are Symbols)</text>
-    <rect style="fill: #ffffff" x="407.29" y="654.294" width="402.7" height="264"/>
-    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="407.29" y="654.294" width="402.7" height="264"/>
-    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="668.294">+push_element()</text>
-    <text font-size="11.2" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:italic;font-weight:normal" x="410.29" y="682.794">Ruby: alias_method :push, :push_element</text>
-    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="705.294">+add(title:String,clazz:Clazz,room:String,</text>
-    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="721.294">     time:DateTime,more:String)</text>
-    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="737.294">+add_full_week(name:String,clazz:Clazz,room:String,</text>
-    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="753.294">               time:DateTime,dur:int,lect:string,</text>
-    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="769.294">               special:String,more:String)</text>
-    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="785.294">+get_name(): String</text>
-    <text font-size="11.2" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:italic;font-weight:normal" x="410.29" y="799.794">Ruby: attr_reader :name</text>
-    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="822.294">+get_elements(): Hash[]</text>
-    <text font-size="11.2" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:italic;font-weight:normal" x="410.29" y="836.794">Ruby: attr_reader :elements</text>
-    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="859.294">+to_s(): String</text>
-    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="875.294">+to_json(): String</text>
-    <text font-size="11.2" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:italic;font-weight:normal" x="410.29" y="889.794">Ruby: to_json(opts=nil)</text>
-    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="912.294">+from_json(json_str:string)</text>
-    <line style="fill: none; fill-opacity:0; stroke-width: 1; stroke: #000000" x1="410.29" y1="913.894" x2="618.19" y2="913.894"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="664.294">-extra: Hash</text>
+    <text font-size="11.2" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:italic;font-weight:normal" x="410.29" y="678.794">Common keys: classes</text>
+    <text font-size="11.2" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:italic;font-weight:normal" x="410.29" y="692.794">(Ruby: Keys are Symbols)</text>
+    <rect style="fill: #ffffff" x="407.29" y="705.294" width="402.7" height="301"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="407.29" y="705.294" width="402.7" height="301"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="719.294">+push_element()</text>
+    <text font-size="11.2" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:italic;font-weight:normal" x="410.29" y="733.794">Ruby: alias_method :push, :push_element</text>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="756.294">+add(title:String,clazz:Clazz,room:String,</text>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="772.294">     time:DateTime,more:String)</text>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="788.294">+add_full_week(name:String,clazz:Clazz,room:String,</text>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="804.294">               time:DateTime,dur:int,lect:string,</text>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="820.294">               special:String,more:String)</text>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="836.294">+get_name(): String</text>
+    <text font-size="11.2" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:italic;font-weight:normal" x="410.29" y="850.794">Ruby: attr_reader :name</text>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="873.294">+get_elements(): Hash[]</text>
+    <text font-size="11.2" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:italic;font-weight:normal" x="410.29" y="887.794">Ruby: attr_reader :elements</text>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="910.294">+get_extra(): Hash</text>
+    <text font-size="11.2" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:italic;font-weight:normal" x="410.29" y="924.794">Ruby: attr_reader :extra</text>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="947.294">+to_s(): String</text>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="963.294">+to_json(): String</text>
+    <text font-size="11.2" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:italic;font-weight:normal" x="410.29" y="977.794">Ruby: to_json(opts=nil)</text>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="1000.29">+from_json(json_str:string)</text>
+    <line style="fill: none; fill-opacity:0; stroke-width: 1; stroke: #000000" x1="410.29" y1="1001.89" x2="618.19" y2="1001.89"/>
   </g>
   <g>
     <rect style="fill: #ffffff" x="183.721" y="529.358" width="164" height="28"/>
@@ -116,11 +121,11 @@
     </text>
   </g>
   <g>
-    <polyline style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="406.284,705.294 265.721,705.294 265.721,675.53 "/>
+    <polyline style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="406.284,749.294 265.721,749.294 265.721,675.53 "/>
     <polygon style="fill: #ffffff" points="265.721,650.358 270.521,664.358 265.721,678.358 260.921,664.358 "/>
     <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="265.721,650.358 270.521,664.358 265.721,678.358 260.921,664.358 "/>
-    <text font-size="12.7998" style="fill: #000000;text-anchor:middle;font-family:monospace;font-style:normal;font-weight:normal" x="336.002" y="702.294">data</text>
-    <text font-size="12.7998" style="fill: #000000;text-anchor:end;font-family:monospace;font-style:normal;font-weight:normal" x="402.284" y="702.294">1</text>
+    <text font-size="12.7998" style="fill: #000000;text-anchor:middle;font-family:monospace;font-style:normal;font-weight:normal" x="336.002" y="746.294">data</text>
+    <text font-size="12.7998" style="fill: #000000;text-anchor:end;font-family:monospace;font-style:normal;font-weight:normal" x="402.284" y="746.294">1</text>
     <text font-size="12.7998" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="276.721" y="662.358">1</text>
   </g>
 </svg>
