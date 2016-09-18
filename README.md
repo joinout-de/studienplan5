@@ -48,11 +48,12 @@ Contains all classes (keys) and their parents (value array elements) in `data`. 
         generated: TimeString,
         ical_dir: String,
         unified: Boolean,
-        data: [
+        data: {
             Clazz: [ Clazz, Clazz, ... ],
             Clazz: [ Clazz, Clazz, ... ],
             Clazz: [ Clazz, Clazz, ... ],
-        ]
+            ...
+        }
     }
 
 `Clazz` is an object, but JSON does not support object as keys, see next:
@@ -93,25 +94,23 @@ Any object that has a `json_object_keys` set to true has the following structure
     - special: Currently only `"fullWeek"` (String, Symbol) to indicate event from Mon-Fri. (either this or `dur` is always set)
     - more: String; Comment.
 * `Clazz`. Object.
-    - `{ "json_class": "Clazz", "v": [ NAME, COURSE, CERT, JAHRGANG, GROUP ]`
-    - NAME: String; Class name
-    - COURSE: String; "BSc" or "BA"
-    - CERT: String; "Fachberater", i.e. "FST", "FIS"
-    - JAHRGANG: String; Name of the group of classes entered the training/studies in the same year.
-    - GROUP: String; Group ID withing Jahrgang (one char)
+    - `{ "json_class": "Clazz", "v": [ NAME, COURSE, CERT, JAHRGANG, GROUP ] }`
+    - `NAME`: String; Class name
+    - `COURSE`: String; "BSc" or "BA"
+    - `CERT`: String; "Fachberater", i.e. "FST", "FIS"
+    - `JAHRGANG`: String; Name of the group of classes entered the training/studies in the same year.
+    - `GROUP`: String; Group ID withing Jahrgang (one char)
 * `ClazzString`: String.
     - `Clazz` as String, see above.
-    - `Jahrgang JAHRGANG, NAME, Course COURSE, Cert. CERT` (NAME, COURSE and CERT are optional and can be missing, including corresponding text and comma)
+    - `Jahrgang JAHRGANG, NAME, Course COURSE, Cert. CERT` (`NAME`, `COURSE` and `CERT` are optional and can be missing, including corresponding text and comma)
 
 ### Version history
 
 #### 1.02
-Changes to `json_object_keys` and `PlanElement` replaced.
-
- * `PlanElement` was replaced by an standard object. Well-known keys:
+* `PlanElement` was replaced by an standard object. Well-known keys:
    * Strings: title, room, time, more, special
    * Clazz: class
- * The file "header" no longer contains `json_object_keys`, moved to the object that has object keys.
+* The file "headers" no longer contains `json_object_keys`, moved to the object that has the object keys.
 
 #### 1.01
 Soon.
