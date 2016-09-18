@@ -135,8 +135,7 @@ First [fork the repo](https://github.com/criztovyl/studienplan5/fork).
     $ git fetch origin
     $ git rebase origin/develop
     $ git checkout develop
-    $ git pull
-    $ git rebase myfeature
+    $ git merge myfeature
     $ git push
 
 Finally create a pull request.
