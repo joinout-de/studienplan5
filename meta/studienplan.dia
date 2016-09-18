@@ -599,7 +599,7 @@ For a jahrgang: "[jahrgang]".#</dia:string>
         <dia:point val="20.3645,24.6147"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="20.3145,24.5647;40.5495,45.9647"/>
+        <dia:rectangle val="20.3145,24.5647;40.5495,50.3647"/>
       </dia:attribute>
       <dia:attribute name="elem_corner">
         <dia:point val="20.3645,24.6147"/>
@@ -608,7 +608,7 @@ For a jahrgang: "[jahrgang]".#</dia:string>
         <dia:real val="20.134999999999998"/>
       </dia:attribute>
       <dia:attribute name="elem_height">
-        <dia:real val="21.300000000000004"/>
+        <dia:real val="25.700000000000003"/>
       </dia:attribute>
       <dia:attribute name="name">
         <dia:string>#Plan#</dia:string>
@@ -737,7 +737,31 @@ Common keys: title, class, room, time, dur, lect, nr, special, more
 (Ruby: Keys are Symbols)#</dia:string>
           </dia:attribute>
           <dia:attribute name="visibility">
-            <dia:enum val="0"/>
+            <dia:enum val="1"/>
+          </dia:attribute>
+          <dia:attribute name="abstract">
+            <dia:boolean val="false"/>
+          </dia:attribute>
+          <dia:attribute name="class_scope">
+            <dia:boolean val="false"/>
+          </dia:attribute>
+        </dia:composite>
+        <dia:composite type="umlattribute">
+          <dia:attribute name="name">
+            <dia:string>#extra#</dia:string>
+          </dia:attribute>
+          <dia:attribute name="type">
+            <dia:string>#Hash#</dia:string>
+          </dia:attribute>
+          <dia:attribute name="value">
+            <dia:string>##</dia:string>
+          </dia:attribute>
+          <dia:attribute name="comment">
+            <dia:string>#Common keys: classes
+(Ruby: Keys are Symbols)#</dia:string>
+          </dia:attribute>
+          <dia:attribute name="visibility">
+            <dia:enum val="1"/>
           </dia:attribute>
           <dia:attribute name="abstract">
             <dia:boolean val="false"/>
@@ -1106,6 +1130,36 @@ Common keys: title, class, room, time, dur, lect, nr, special, more
           </dia:attribute>
           <dia:attribute name="comment">
             <dia:string>#Ruby: attr_reader :elements#</dia:string>
+          </dia:attribute>
+          <dia:attribute name="abstract">
+            <dia:boolean val="false"/>
+          </dia:attribute>
+          <dia:attribute name="inheritance_type">
+            <dia:enum val="2"/>
+          </dia:attribute>
+          <dia:attribute name="query">
+            <dia:boolean val="false"/>
+          </dia:attribute>
+          <dia:attribute name="class_scope">
+            <dia:boolean val="false"/>
+          </dia:attribute>
+          <dia:attribute name="parameters"/>
+        </dia:composite>
+        <dia:composite type="umloperation">
+          <dia:attribute name="name">
+            <dia:string>#get_extra#</dia:string>
+          </dia:attribute>
+          <dia:attribute name="stereotype">
+            <dia:string>##</dia:string>
+          </dia:attribute>
+          <dia:attribute name="type">
+            <dia:string>#Hash#</dia:string>
+          </dia:attribute>
+          <dia:attribute name="visibility">
+            <dia:enum val="0"/>
+          </dia:attribute>
+          <dia:attribute name="comment">
+            <dia:string>#Ruby: attr_reader :extra#</dia:string>
           </dia:attribute>
           <dia:attribute name="abstract">
             <dia:boolean val="false"/>
@@ -1873,17 +1927,17 @@ JSON.load(string,
         <dia:boolean val="false"/>
       </dia:attribute>
       <dia:attribute name="obj_pos">
-        <dia:point val="20.3142,35.2647"/>
+        <dia:point val="20.3142,37.4647"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="12.5361,31.7679;20.3642,36.1147"/>
+        <dia:rectangle val="12.5361,31.7679;20.3642,38.3147"/>
       </dia:attribute>
       <dia:attribute name="meta">
         <dia:composite type="dict"/>
       </dia:attribute>
       <dia:attribute name="orth_points">
-        <dia:point val="20.3142,35.2647"/>
-        <dia:point val="13.2861,35.2647"/>
+        <dia:point val="20.3142,37.4647"/>
+        <dia:point val="13.2861,37.4647"/>
         <dia:point val="13.2861,32.5179"/>
       </dia:attribute>
       <dia:attribute name="orth_orient">
@@ -1900,7 +1954,7 @@ JSON.load(string,
         <dia:color val="#000000"/>
       </dia:attribute>
       <dia:connections>
-        <dia:connection handle="0" to="O1" connection="28"/>
+        <dia:connection handle="0" to="O1" connection="32"/>
         <dia:connection handle="1" to="O2" connection="6"/>
       </dia:connections>
     </dia:object>
