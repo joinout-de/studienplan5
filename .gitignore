@@ -12,6 +12,7 @@ prog.rb
 # Other
 bower_components
 web/gc*.png
+tags
 
 # Publishing
 data
