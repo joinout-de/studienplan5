@@ -126,17 +126,26 @@ This is for preserving the Hash key objects. (JSON does not allow objects as key
 
 Use a combination of the [git flow](http://nvie.com/posts/a-successful-git-branching-model/), [git rebase](https://randyfay.com/node/91) and [GitHub](https://guides.github.com/introduction/flow/) workflows.
 
-First [fork the repo](https://github.com/criztovyl/studienplan5/fork).
+0. [Fork](https://github.com/criztovyl/studienplan5/fork) and clone the repo (GitHub worklow)
+0. Create a new branch off `develop`, e.g. `myfeature` (git-flow workflow)
+0. ...do work....
+0. Fetch `develop` from upstream to download code updates (git-rebase workflow)
+0. Rebase your branch on `develop` to apply the code updates to your base code (git-rebase workflow; If nothing changed on `develop` that will do nothing)
+0. Push `myfeature` to upload your changes (any workflow)
+0. Create a pull request. (GitHub workflow)
 
-    $ git clone https://github.com/[Your User]/studienplan5
-    $ cd studienplan5
-    $ git checkout -b myfeature develop
-    ... do work, commits, etc... If you're done continue below.
-    $ git fetch origin
-    $ git rebase origin/develop
-    $ git push
+For the lazy ones:  
+(Unless you use Two-Factor Auth, then you have to add `-H "X-GitHub-OTP: CODE"` with your OTP code instead of `CODE` to `curl`) 
 
-Finally create a pull request for `myfeature`.
+    read -p "GitHub username: " GHUSER
+    curl https://api.github.com/repos/criztovyl/studienplan5/forks -d '{}' -u $GHUSER
+    git clone https://github.com/$GHUSER/studienplan5.git studienplan5
+    cd $_
+    git checkout -b myfeature develop
+    # ... do work, commits, etc... If you're done continue below.
+    git fetch origin
+    git rebase origin/develop
+    git push
 
 ## Author
 
