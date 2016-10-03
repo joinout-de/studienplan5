@@ -24,9 +24,12 @@
 #  -- Nothing so far --
 ##########
 
+require "logger"
+$logger = Logger.new(STDERR)
+$logger.level= Logger::INFO
+
 require "nokogiri"
 require "date"
-require "logger"
 require "set"
 require "icalendar"
 require "icalendar/tzinfo"
@@ -34,22 +37,22 @@ require "json/add/struct"
 require "optparse"
 require "fileutils"
 require "tzinfo"
-require "./util"; include StudienplanUtil
-require "./structs"
-require "./extractor_semesterplan"
+
+require_relative "util"; include StudienplanUtil
+require_relative "structs"
+require_relative "extractor_semesterplan"
+require_relative "extractor_ausbildungsplan"
 
 # Default values for options
 ical_dir = "ical"
 data_file = "data.json"
 classes_file = "classes.json"
 
-$logger = Logger.new(STDERR)
-$logger.level= Logger::DEBUG
-
 # Command line opts
 $options = {}
 
 OptionParser.new do |opts|
+
     opts.banner = "Usage: %s [options] [FILE]" % $0
     opts.separator ""
     opts.separator "FILE is a HTMLed XLS Studienplan."
@@ -126,7 +129,11 @@ if outp
         data_file = outp + data_file
         classes_file = outp + classes_file
 
-        Dir.mkdir(outp) unless Dir.exists?(outp) or $options[:simulate]
+        unless Dir.exists? outp
+            Dir.mkdir(outp)
+            $logger.info "Would create dir #{outp}." if $options[:simulate]
+        end
+
     else
         ical_dir = outp
         data_file = outp + ".data.json"
@@ -139,9 +146,35 @@ if outp
     end
 end
 
-if file = ARGV[0]
-    se = SemesterplanExtractor.new(file)
-    data = se.extract
+data = nil
+
+if file1 = ARGV[0] and file2 = ARGV[1]
+
+    data1, data2 = nil
+
+    File.open(file1, "rb") do |f| data1 = SemesterplanExtractor.new(f).extract; end
+    File.open(file2, "rb") do |f| data2 = ExtractorAusbildungsplan.new(f).extract; end
+
+    data = data1.merge data2 do |key, oldval, newval| StudienplanUtil.arrayify(oldval) + StudienplanUtil.arrayify(newval); end
+else
+    $logger.info "No file(s)."
+end
+
+# unified: :only_self, :no_self, nil
+#  :only_self : only self elements
+#  :no_self   : append parent elements to calendar (useful when writing divided files in parallel)
+#  nil        : default (self and parent)
+def data.add_to_icalendar(key, cal, unified=nil)
+
+    unless unified == :no_self
+        self[key].each do |planElement|
+            planElement.add_to_icalendar cal
+        end if self[key]
+    end
+
+    unless unified == :only_self
+        method(__method__).call(key.parent, cal) if key.parent # Mwahahaha, calls method itself so I won't need to rename here too if I change method name ^^
+    end
 end
 
 # JSON data file version
@@ -149,7 +182,13 @@ $data_version = "1.02"
 
 if data
 
+    $logger.debug "We have data."
+    $logger.debug $options.inspect
+
     if $options[:json]
+
+        $logger.debug "Option :json"
+
         json_data = {
             json_data_version: $data_version,
             generated: Time.now,
@@ -170,6 +209,9 @@ if data
     end
 
     if $options[:ical]
+
+        $logger.debug "Option :ical"
+
         tz=TZInfo::Timezone.get "Europe/Berlin"
         cal_stub = Icalendar::Calendar.new
         no_unified = $options[:no_unified] ? :only_self : nil
@@ -177,7 +219,10 @@ if data
         cal_stub.prodid = "-Christoph criztovyl Schulz//studienplan5 using icalendar-ruby//DE"
         cal_stub.add_timezone tz.ical_timezone(Time.now)
 
-        Dir.mkdir(ical_dir) unless Dir.exists?(ical_dir) or $options[:simulate]
+        unless Dir.exists?(ical_dir)
+            Dir.mkdir(ical_dir)
+            $logger.info "Would create #{ical_dir}." if $options[:simulate]
+        end
 
         $logger.info "Writing unified calendars." unless no_unified
 
@@ -206,6 +251,9 @@ if data
     end
 
     if $options[:classes]
+
+        $logger.debug "Option :classes"
+
         json_data = {
             json_data_version: $data_version,
             generated: Time.now,
@@ -246,6 +294,9 @@ else
 end
 
 if $options[:web] and $options[:output] and $options[:output].end_with?(?/)
+
+    $logger.debug "Option :web"
+
 
     $logger.info "Copying web content to %s" % $options[:output]
 
