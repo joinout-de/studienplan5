@@ -1,6 +1,6 @@
 require "json"
-require "./structs.rb"
-require "Date"
+require "date"
+require_relative "structs"
 
 class ExtractorAusbildungsplan
 

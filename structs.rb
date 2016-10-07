@@ -16,7 +16,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 require "json"
-require "./util"; include StudienplanUtil
+require_relative "util"; include StudienplanUtil
 
 class Plan
 

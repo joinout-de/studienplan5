@@ -42,8 +42,8 @@ require "nokogiri"
 require "date"
 require "logger"
 require "set"
-require "./structs"
-require "./util"; include StudienplanUtil
+require_relative "structs"
+require_relative "util"; include StudienplanUtil
 
 # Hackedy hack hack
 class Set
