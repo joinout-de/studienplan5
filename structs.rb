@@ -20,6 +20,9 @@ require_relative "util"; include StudienplanUtil
 
 class Plan
 
+    @@logger = $logger || Logger.new(STDERR)
+    @@logger.level = $logger && $logger.level || Logger::INFO
+
     attr_reader :name, :elements, :extra
 
     def initialize(name, elements = [], extra = {})
@@ -33,6 +36,22 @@ class Plan
     end
 
     alias_method :push, :push_element
+
+    def merge(plan)
+
+        case plan
+        when Plan
+            plan = Plan.new(plan.name + "+ #{@name}", plan.elements + @elements, plan.extra.merge(@extra))
+        when Array
+            plan += @elements
+        when Hash
+            plan = plan.merge @extra
+        else
+            @@logger.error "Can't merge a plan with #{plan.class}!"
+            @@logger.debug plan.inspect
+        end
+        plan
+    end
 
     def add_full_week(title, clazz, room, date, more=nil)
         push({title: title, class: clazz, room: room, time: date, more: more, special: :fullWeek})

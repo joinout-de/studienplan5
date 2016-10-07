@@ -155,7 +155,7 @@ if file1 = ARGV[0] and file2 = ARGV[1]
     File.open(file1, "rb") do |f| data1 = SemesterplanExtractor.new(f).extract; end
     File.open(file2, "rb") do |f| data2 = ExtractorAusbildungsplan.new(f).extract; end
 
-    data = data1.merge data2 do |key, oldval, newval| StudienplanUtil.arrayify(oldval) + StudienplanUtil.arrayify(newval); end
+    data = data1.merge data2
 else
     $logger.info "No file(s)."
 end
@@ -219,6 +219,8 @@ if data
         cal_stub.prodid = "-Christoph criztovyl Schulz//studienplan5 using icalendar-ruby//DE"
         cal_stub.add_timezone tz.ical_timezone(Time.now)
 
+        calendars = {}
+
         unless Dir.exists?(ical_dir)
             Dir.mkdir(ical_dir)
             $logger.info "Would create #{ical_dir}." if $options[:simulate]
@@ -226,17 +228,71 @@ if data
 
         $logger.info "Writing unified calendars." unless no_unified
 
-        data.each_key do |clazz|
+        $logger.info "Collecting events..."
 
-            $logger.debug "Class: #{clazz}"
+        data.elements.each do |elem|
 
-            cal = cal_stub.dup
+            clazz = elem[:class]
+
+            $logger.debug "Class: #{clazz.inspect}"
+            $logger.debug "Elem: #{elem.inspect}" unless clazz
+
+            calendars[clazz] = cal_stub.dup unless calendars[clazz]
+
+            tzid=calendars[clazz].timezones[0].tzid.to_s
+
+            calendars[clazz].event do |evt|
+
+                formats = { title: "%s", class: "Klasse/Jahrgang: %s", more: "%s", nr: "#%s", room: "%s", lect: "Dozent: %s. " }.merge({}) do |key, oldval, newval|
+
+                    empty = oldval.class == Array && oldval.length > 1 ? oldval[1] : ""
+
+                    if elem[key].to_s != empty
+                        newval = oldval % elem[key]
+                    else
+                        newval = ""
+                    end
+
+                end
+
+                time = elem[:time]
+                dur = elem[:dur]
+
+                dtend = time + 5 if elem[:special] == :fullWeek
+                comment = ""
+
+                evt.dtstart = Icalendar::Values::DateTime.new time, 'tzid' => tzid
+
+                if dtend
+                    evt.dtend = Icalendar::Values::DateTime.new dtend, 'tzid' => tzid
+                elsif elem[:dur]
+                    evt.dtend = Icalendar::Values::DateTime.new time + dur/24.0, 'tzid' => tzid
+                else
+                    evt.dtend = Icalendar::Values::DateTime.new time + 60.0/24, 'tzid' => tzid # Events must have end thats not equal to start, set dur 60 min
+                    comment += "\nIm Plan wurde keine Dauer angegeben, daher auf 60 Minuten gesetz." 
+                    $logger.warn "Element with unknown Duration!"
+                end
+
+                evt.summary = formats[:title] + formats[:nr]
+                evt.location = formats[:room]
+                
+                evt.description = formats[:lect] + formats[:more] + formats[:class] + comment
+
+                #evt.uid = "de.joinout.criztovyl.studienplan5.planElement." + clazz.id_str + "." + title+nr # TODO: UID. This is not unique, find something.
+            end
+
+        end
+
+        $logger.info "Writing calendars..."
+
+        calendars.each_pair do |clazz, cal|
+
+            $logger.debug "Class: #{clazz.inspect}"
+
             clazz_file = ical_dir + File::SEPARATOR + StudienplanUtil.class_ical_name(clazz) + ".ical"
-
             clazz_file.gsub!(/\.ical/, ".unified.ical") unless no_unified
-            data.add_to_icalendar clazz, cal, no_unified
 
-            $logger.debug "Writing calendar file \"%s\"" % clazz_file
+            $logger.info "Writing calendar file \"%s\"" % clazz_file
 
             if $options[:simulate]
                 $logger.info "Would write #{clazz_file}"
