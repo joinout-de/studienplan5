@@ -244,7 +244,7 @@ if data
             calendars[clazz].event do |evt|
 
                 formats = { title: "%s", class: "Klasse/Jahrgang: %s", more: "%s", nr: "#%s", room: "%s", lect: "Dozent: %s. " }
-                formats.merge(formats) do |key, oldval, newval|
+                formats = formats.merge(formats) do |key, oldval, newval|
 
                     empty = oldval.class == Array && oldval.length > 1 ? oldval[1] : ""
 
