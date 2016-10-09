@@ -267,10 +267,10 @@ if data
                 if dtend
                     evt.dtend = Icalendar::Values::DateTime.new dtend, 'tzid' => tzid
                 elsif elem[:dur]
-                    evt.dtend = Icalendar::Values::DateTime.new time + dur/24.0, 'tzid' => tzid
+                    evt.dtend = Icalendar::Values::DateTime.new time + dur/24.0, 'tzid' => tzid # dur is in hours, addition in days.
                 else
-                    evt.dtend = Icalendar::Values::DateTime.new time + 60.0/24, 'tzid' => tzid # Events must have end thats not equal to start, set dur 60 min
-                    comment += "\nIm Plan wurde keine Dauer angegeben, daher auf 60 Minuten gesetz." 
+                    evt.dtend = Icalendar::Values::DateTime.new time + 1/24.0, 'tzid' => tzid # Events must have end thats not equal to start, set dur 60 min (also see above)
+                    comment += "\nIm Plan wurde keine Dauer angegeben, daher auf 60 Minuten gesetzt."
                     $logger.warn "Element with unknown Duration!"
                 end
 
