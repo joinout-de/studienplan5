@@ -1,30 +1,9 @@
 #!/usr/bin/env bash
+# Part of studienplan5
+# GPLv3 or later
+# Christoph 'criztovyl' Schulz, 2016
 
-# Completition for Bash:
-#
-#    _UseExtrHelper ()
-#    {
-#        local cur;
-#        COMPREPLY=();
-#        cur=${COMP_WORDS[COMP_CWORD]};
-#        case $COMP_CWORD in
-#            "1")
-#                COMPREPLY=($( compgen -W "moodle ausbplan" -- $cur ))
-#            ;;
-#            "2")
-#                COMPREPLY=($( compgen -f -- $cur ))
-#            ;;
-#            "3")
-#                COMPREPLY=($( compgen -W "force overwrite" -- $cur ))
-#            ;;
-#        esac;
-#        return 0
-#    }
-#    complete -F _UseExtrHelper ./extr_helper.sh
-#
-# Install completition:
-# $ head -23 extr_helper.sh | tail -n19 | sed 's/^#    //' >> ~/.bash_completition && . ~/.bash_completition
-
+# Completition for bash in extr_helper.bash_completition.
 
 ###
 # 1 - Declarations
@@ -58,19 +37,48 @@ EXIT_AUSBPLAN_ALREADY_THERE=5
 
 # 2 - Functions
 
-display_usage() { echo "Usage: $0 extractor file [force]"; exit $EXIT_HELP; }
+display_usage() {
+
+    # Args: fullhelp
+    # fullhelp - non-empty = true
+
+    fullhelp=$1
+
+    echo "Usage: $0 extractor file [force|overwrite|reparse]"
+
+    if [ "$fullhelp" ]; then
+        echo
+        echo "Copies the file to it's corresponding directory in $SRC_DIR, with unique prefix"
+        echo "Extracts the data from the file, and stores output in corresponding directory in $CONV_DIR"
+        echo
+        echo "Extractors: moodle moodle-dl ausbplan|ausb_plan|ausbildungsplan"
+        echo
+        echo "  moodle extracts from XLS file, aka ABB_Gesamtplan_Moodle.xls"
+        echo "  moodle-dl downloads the file from moodle (user and pw required) and then calls the above on the downloaded file."
+        echo "  ausbildungsplan extracts from Ausbildungsplan_[...].pdf"
+        echo
+        echo "force disables extr_helper check for the correct filetype"
+        echo "overwrite overwrites files that already exist in the corresponding $SRC_DIR"
+        echo "reparse reparses the file if it already exists in the corresponding $SRC_DIR"
+        echo
+        echo "moodle, moodle-dl: $XLS_DIR/file.xls -- LibreOffice --> $HTML_DIR/file.html"
+        echo "ausbildungsplan  : $PDF_DIR/file.pdf --   Tabula    --> $JSON_DIR/file.json"
+    fi
+
+    exit $EXIT_HELP
+}
 
 already_there_msg()
 {
     # Args: exit_code
-    echo "Already there :)" >&2
-    echo "Use \"overwrite\" as third argument to overwrite." >&2
+    echo "File already exists in src. :)" >&2
+    echo "Use \"overwrite\" or \"reparse\" as third argument to overwrite resp. reparse the file." >&2
     exit $exit
 }
 
 copy_src_file()
 {
-    # Args: src file must_exist callback force
+    # Args: src file must_exist callback force reparse
     # force - non-empty -> true
     src=$1
     src_dir=`dirname "$src"`
@@ -83,6 +91,7 @@ copy_src_file()
     must_exist=$3
     callback=$4
     force=$5
+    reparse=$6
 
     if [ ! -f "$file_dir/$src_name" ] || ! cmp "$src" "$file_dir/$src_name" || [ $force ]; then
         cp "$src" "$file"
@@ -92,6 +101,8 @@ copy_src_file()
         ( cd "$file_dir" && ln -s "$src_name" "$file_name" )
         $callback "$src" "$file"
         rm -f "$file"
+    elif [ $reparse ]; then
+        $callback "$src" "$file"
     else
         return 1
     fi
@@ -111,7 +122,9 @@ check_file()
     local name=$3
     local force=$4
 
-    [[ `file --mime-type -b "$file"` == "$mime" ]] || [ $force ] || { echo -e "Moodle expects a $mime file.\nPlease use \"force\" as third argument to force extraction." >&2; return 1; }
+    local filemime=`file --mime-type -b "$(realpath "$file")"`
+
+    [[ "$filemime" == "$mime" ]] || [ $force ] || { echo -e "$name expects a $mime file, but $file is \"$filemime\".\nUse \"force\" as third argument to force extraction." >&2; return 1; }
 }
 
 file_existance_check()
@@ -122,14 +135,27 @@ file_existance_check()
 # 3 - CLI
 
 # Help
-[[ "$0" =~ ^-{1,2}h(elp)?$ ]] || [ -z "$1" ] || [ -z "$2" ] && { display_usage; }
+[[ "$0" =~ ^-{1,2}h(elp)?$ ]] || [ -z "$1" ] || [ -z "$2" ] && { display_usage full; }
 
 Action=$1
 Src=$2
 Third=$3
 
-[ "$Third" == "force" ] && Force=1 || Force=
-[ "$Third" == "overwrite" ] && Overwrite=1 || Overwrite=
+Force=
+Overwrite=
+Reparse=
+
+case $Third in
+    force)
+        Force=1
+        ;;
+    overwrite)
+        Overwrite=1
+        ;;
+    reparse)
+        Reparse=1
+        ;;
+esac
 
 [ -z "$TABULA" ] && [[ "$EXTR_HELPER_TABULA" ]] && TABULA=$EXTR_HELPER_TABULA
 [ -z "$LOFFICE" ] && [[ "$EXTR_HELPER_LOFFICE" ]] && LOFFICE=$EXTR_HELPER_LOFFICE
@@ -166,13 +192,15 @@ case "$Action" in
             src_name=`basename "$1"`
             xls_file=$2
 
+            echo "Extracting w/ LibreOffice can take a moment."
+
             # https://ask.libreoffice.org/en/question/1686/how-to-not-connect-to-a-running-instance/
             ${LOFFICE:-loffice} "-env:UserInstallation=file://$LO_Tmpdir" --convert-to html "$xls_file" --outdir "$HTML_DIR"
 
             ( cd "$HTML_DIR" && ln -fs "`basename "$(replace_suffix "$xls_file" .html)"`" "$(replace_suffix "$src_name" .html)"; )
         }
 
-        copy_src_file "$Src" "$XLS_DIR/$New_Src_Name" "$HTML_DIR/$(replace_suffix "$Src_Name" .html)" parse_moodle_xls $Overwrite || echo `already_there_msg $EXIT_MOODLE_ALREADY_THERE`
+        copy_src_file "$Src" "$XLS_DIR/$New_Src_Name" "$HTML_DIR/$(replace_suffix "$Src_Name" .html)" parse_moodle_xls $Overwrite $Reparse || echo `already_there_msg $EXIT_MOODLE_ALREADY_THERE`
         ;;
     ausbplan|ausb_plan|ausbildungsplan)
 
