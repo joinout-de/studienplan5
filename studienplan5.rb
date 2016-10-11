@@ -164,18 +164,18 @@ end
 #  :only_self : only self elements
 #  :no_self   : append parent elements to calendar (useful when writing divided files in parallel)
 #  nil        : default (self and parent)
-def data.add_to_icalendar(key, cal, unified=nil)
-
-    unless unified == :no_self
-        self[key].each do |planElement|
-            planElement.add_to_icalendar cal
-        end if self[key]
-    end
-
-    unless unified == :only_self
-        method(__method__).call(key.parent, cal) if key.parent # Mwahahaha, calls method itself so I won't need to rename here too if I change method name ^^
-    end
-end
+#def data.add_to_icalendar(key, cal, unified=nil)
+#
+#    unless unified == :no_self
+#        self[key].each do |planElement|
+#            planElement.add_to_icalendar cal
+#        end if self[key]
+#    end
+#
+#    unless unified == :only_self
+#        method(__method__).call(key.parent, cal) if key.parent # Mwahahaha, calls method itself so I won't need to rename here too if I change method name ^^
+#    end
+#end
 
 # JSON data file version
 $data_version = "1.02"
@@ -331,7 +331,7 @@ if data
         json_data = {
             json_data_version: $data_version,
             generated: Time.now,
-            ical_dir: $options[:cal_dir],
+            ical_dir: ical_dir,
             unified: $options[:no_unified] ? false : true,
             data: {}
         }
