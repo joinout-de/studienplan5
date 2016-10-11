@@ -21,7 +21,7 @@ or
 
 ## Usage
 
-Please see `ruby studienplan5.rb --help`.
+ToDo, in the meantime see `ruby studienplan5.rb --help` or [README in master](https://github.com/joinout-de/studienplan5/tree/master#usage).
 
 ## JSON data file format
 Below the format of `data.json` and `classes.json`. For the value definitions see below.
