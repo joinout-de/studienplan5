@@ -276,10 +276,27 @@ if data
 
                 evt.summary = formats[:title] + formats[:nr]
                 evt.location = formats[:room]
-                
+
                 evt.description = formats[:lect] + formats[:more] + formats[:class] + comment
 
                 #evt.uid = "de.joinout.criztovyl.studienplan5.planElement." + clazz.id_str + "." + title+nr # TODO: UID. This is not unique, find something.
+            end
+
+        end
+
+        unless no_unified
+
+            $logger.info "Including parent calendar events..."
+
+            calendars.keys.each do |clazz|
+
+                $logger.debug "Parent events for #{clazz}"
+
+                parent = clazz
+                while parent = parent.parent
+                    $logger.debug parent
+                    calendars[parent].events.each do |evt| calendars[clazz].add_event evt end if calendars[parent]
+                end
             end
 
         end
