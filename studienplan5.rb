@@ -164,18 +164,18 @@ end
 #  :only_self : only self elements
 #  :no_self   : append parent elements to calendar (useful when writing divided files in parallel)
 #  nil        : default (self and parent)
-def data.add_to_icalendar(key, cal, unified=nil)
-
-    unless unified == :no_self
-        self[key].each do |planElement|
-            planElement.add_to_icalendar cal
-        end if self[key]
-    end
-
-    unless unified == :only_self
-        method(__method__).call(key.parent, cal) if key.parent # Mwahahaha, calls method itself so I won't need to rename here too if I change method name ^^
-    end
-end
+#def data.add_to_icalendar(key, cal, unified=nil)
+#
+#    unless unified == :no_self
+#        self[key].each do |planElement|
+#            planElement.add_to_icalendar cal
+#        end if self[key]
+#    end
+#
+#    unless unified == :only_self
+#        method(__method__).call(key.parent, cal) if key.parent # Mwahahaha, calls method itself so I won't need to rename here too if I change method name ^^
+#    end
+#end
 
 # JSON data file version
 $data_version = "1.02"
@@ -276,10 +276,27 @@ if data
 
                 evt.summary = formats[:title] + formats[:nr]
                 evt.location = formats[:room]
-                
+
                 evt.description = formats[:lect] + formats[:more] + formats[:class] + comment
 
                 #evt.uid = "de.joinout.criztovyl.studienplan5.planElement." + clazz.id_str + "." + title+nr # TODO: UID. This is not unique, find something.
+            end
+
+        end
+
+        unless no_unified
+
+            $logger.info "Including parent calendar events..."
+
+            calendars.keys.each do |clazz|
+
+                $logger.debug "Parent events for #{clazz}"
+
+                parent = clazz
+                while parent = parent.parent
+                    $logger.debug parent
+                    calendars[parent].events.each do |evt| calendars[clazz].add_event evt end if calendars[parent]
+                end
             end
 
         end
@@ -314,7 +331,7 @@ if data
         json_data = {
             json_data_version: $data_version,
             generated: Time.now,
-            ical_dir: $options[:cal_dir],
+            ical_dir: ical_dir,
             unified: $options[:no_unified] ? false : true,
             data: {}
         }

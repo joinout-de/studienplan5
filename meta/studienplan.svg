@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/PR-SVG-20010719/DTD/svg10.dtd">
-<svg width="52cm" height="30cm" viewBox="-222 414 1033 594" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg width="52cm" height="33cm" viewBox="-222 414 1033 642" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
   <g>
     <rect style="fill: #ffffff" x="-220.948" y="495.522" width="341.1" height="44"/>
     <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="-220.948" y="495.522" width="341.1" height="44"/>
@@ -49,8 +49,8 @@
     <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="664.294">-extra: Hash</text>
     <text font-size="11.2" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:italic;font-weight:normal" x="410.29" y="678.794">Common keys: classes</text>
     <text font-size="11.2" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:italic;font-weight:normal" x="410.29" y="692.794">(Ruby: Keys are Symbols)</text>
-    <rect style="fill: #ffffff" x="407.29" y="705.294" width="402.7" height="301"/>
-    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="407.29" y="705.294" width="402.7" height="301"/>
+    <rect style="fill: #ffffff" x="407.29" y="705.294" width="402.7" height="349"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="407.29" y="705.294" width="402.7" height="349"/>
     <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="719.294">+push_element()</text>
     <text font-size="11.2" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:italic;font-weight:normal" x="410.29" y="733.794">Ruby: alias_method :push, :push_element</text>
     <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="756.294">+add(title:String,clazz:Clazz,room:String,</text>
@@ -69,6 +69,9 @@
     <text font-size="11.2" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:italic;font-weight:normal" x="410.29" y="977.794">Ruby: to_json(opts=nil)</text>
     <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="1000.29">+from_json(json_str:string)</text>
     <line style="fill: none; fill-opacity:0; stroke-width: 1; stroke: #000000" x1="410.29" y1="1001.89" x2="618.19" y2="1001.89"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="1016.29">+merge(plan:Plan): Plan</text>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="1032.29">+merge(plan:[]): []</text>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="410.29" y="1048.29">+merge(plan:Hash): Hash</text>
   </g>
   <g>
     <rect style="fill: #ffffff" x="183.721" y="529.358" width="164" height="28"/>
@@ -121,11 +124,11 @@
     </text>
   </g>
   <g>
-    <polyline style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="406.284,749.294 265.721,749.294 265.721,675.53 "/>
+    <polyline style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="406.284,773.294 265.721,773.294 265.721,675.53 "/>
     <polygon style="fill: #ffffff" points="265.721,650.358 270.521,664.358 265.721,678.358 260.921,664.358 "/>
     <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="265.721,650.358 270.521,664.358 265.721,678.358 260.921,664.358 "/>
-    <text font-size="12.7998" style="fill: #000000;text-anchor:middle;font-family:monospace;font-style:normal;font-weight:normal" x="336.002" y="746.294">data</text>
-    <text font-size="12.7998" style="fill: #000000;text-anchor:end;font-family:monospace;font-style:normal;font-weight:normal" x="402.284" y="746.294">1</text>
+    <text font-size="12.7998" style="fill: #000000;text-anchor:middle;font-family:monospace;font-style:normal;font-weight:normal" x="336.002" y="770.294">data</text>
+    <text font-size="12.7998" style="fill: #000000;text-anchor:end;font-family:monospace;font-style:normal;font-weight:normal" x="402.284" y="770.294">1</text>
     <text font-size="12.7998" style="fill: #000000;text-anchor:start;font-family:monospace;font-style:normal;font-weight:normal" x="276.721" y="662.358">1</text>
   </g>
 </svg>
