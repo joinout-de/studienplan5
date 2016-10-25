@@ -376,16 +376,17 @@ if $options[:web] and $options[:output] and $options[:output].end_with?(?/)
 
     $logger.debug "Option :web"
 
-
-    $logger.info "Copying web content to %s" % $options[:output]
-
+    wd = File.dirname File.realpath(__FILE__) # Working Directory (the directory of this file)
     sep = File::SEPARATOR
-    o = $options[:output] + sep
+    o = $options[:output] # Output
+    web_dir = wd + "/web/."
+
+    $logger.info "Copying web content from %s to %s" % [web_dir, o]
 
     if $options[:simulate]
-        $logger.info "Would copy ./web/ to #{o}"
+        $logger.info "Would copy the files..."
     else
-        FileUtils.cp_r "web/.", o
+        FileUtils.cp_r web_dir, o
         if not $options[:no_apache]
             if Dir.exists? ical_dir
                 FileUtils.mv o + "indexes_header.html", ical_dir
