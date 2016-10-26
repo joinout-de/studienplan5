@@ -111,6 +111,10 @@ OptionParser.new do |opts|
         $logger.level = level
     end
 
+    opts.on("--disable-load-events", "Disable loading of data.json in -w/--web page") do |no_events|
+        $options[:no_events] = true
+    end
+
     opts.on("-h", "--help", "Print this help.") do |h|
         puts opts
         exit
@@ -178,7 +182,7 @@ end
 #end
 
 # JSON data file version
-$data_version = "1.02"
+$data_version = "1.03"
 
 if data
 
@@ -333,6 +337,7 @@ if data
             generated: Time.now,
             ical_dir: ical_dir,
             unified: $options[:no_unified] ? false : true,
+            load_events: $options[:no_events] ? false : true,
             data: {}
         }
         export = json_data[:data] # TODO Do we still require this as an extra variable?

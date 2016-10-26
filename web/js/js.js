@@ -134,7 +134,7 @@ function loadClasses(default_ical_dir){
     $.ajax("classes.json").done(function(data){
         console.log("Loaded classes");
 
-        var keyys, values;
+        var keyys, values, loadEvents = true;
 
         var json_data_version = data.json_data_version.split("."); // 0 - major, 1 - minor
 
@@ -151,6 +151,8 @@ function loadClasses(default_ical_dir){
             }
 
             switch(Number(json_data_version[1])){
+                case 3:
+                    loadEvents = data.load_events;
                 case 2:
                     if(data.data.json_object_keys){
                         keyys = data.data.keys;
@@ -182,7 +184,7 @@ function loadClasses(default_ical_dir){
         }
 
         if(keyys){
-            $.get("data.json", function(data_evts){
+            var populate_func = function(data_evts){
 
                 events = data_evts;
                 console.log("Loaded events");
@@ -190,8 +192,6 @@ function loadClasses(default_ical_dir){
                 $(document).ready(function(){
 
                     classes = [[], [], []];
-
-                    var log = [];
 
                     var select = $(".inner.cover#usage select").first();
 
@@ -218,13 +218,10 @@ function loadClasses(default_ical_dir){
 
                         classes[1].push(o_values);
 
-                        var start = Date.now();
-
-                        classes[2].push(_.filter(events.data, function(o){
+                        classes[2].push(_.filter((events && events.data) || [], function(o){
                             return Clazz.from_json(o.class).equals(o_key);
                         }));
 
-                        log.push({class: o_key, time: Date.now()-start, events: classes[2][classes[2].length-1]});
                     });
 
                     $.each(classes[2], function(index, events){
@@ -243,9 +240,20 @@ function loadClasses(default_ical_dir){
                         $(select).change();
                     }
 
-                    console.log(log);
                 });
-            });
+            }
+
+            if(loadEvents)
+                $.get("data.json").done(function(data){
+                    populate_func(data);
+                }).fail(function(){
+                    populate_func(undefined);
+                });
+            else{
+                console.log("Configured not to load data.json.");
+                populate_func(undefined);
+            }
+
         }
         else {
             console.error("Could not process classes! (empty)");
