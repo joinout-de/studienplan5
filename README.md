@@ -1,5 +1,5 @@
 # studienplan5.rb
-A utility to convert HTMLed-XLS Studienpläne into iCals.
+A utility to convert and present ugly plans, unified in one file.
 
 It's under heavy development, so please take a look at other [branches](https://github.com/joinout-de/studienplan5/branches).
 
