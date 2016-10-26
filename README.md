@@ -12,20 +12,6 @@ With [Bundler](https://bundler.io/):
 
     $ bundler install
 
-
-## XLS -> HTML
-
-Use LibreOffice. My version\* also exports comments.
-
-    loffice --convert-to html XLS_file
-
-or
-
-    soffice --convert-to html XLS_file
-
-
-\* LibreOffice 5.1.2.1.0 10m0(Build:1)
-
 ## Usage
 
     Usage: ./studienplan5.rb [options] [FILE]
@@ -45,6 +31,32 @@ or
         -a, --disable-apache-config      Do not export .htaccess and other Apache-specific customizations.
         -h, --help                       Print this help.
 
+## Converting files
+
+Use `extr_helper.sh`:
+
+    Usage: ./extr_helper.sh extractor file [force|overwrite|reparse]
+
+    Copies the file to it's corresponding directory in data/src, with unique prefix
+    Extracts the data from the file, and stores output in corresponding directory in data/conv
+
+    Extractors: moodle moodle-dl ausbplan|ausb_plan|ausbildungsplan
+
+      moodle extracts from XLS file, aka ABB_Gesamtplan_Moodle.xls
+      moodle-dl downloads the file from moodle (user and pw required) and then calls the above on the downloaded file.
+      ausbildungsplan extracts from Ausbildungsplan_[...].pdf
+
+    force disables extr_helper check for the correct filetype
+    overwrite overwrites files that already exist in the corresponding data/src
+    reparse reparses the file if it already exists in the corresponding data/src
+
+    moodle, moodle-dl: data/src/xls/file.xls -- LibreOffice --> data/conv/html/file.html
+    ausbildungsplan  : data/src/pdf/file.pdf --   Tabula    --> data/conv/json/file.json
+
+Or convert manually:
+ - .pdf: `$ tabula --spreadsheet --use-line-returns --format JSON [PDF_FILE] > [JSON_FILE]`
+ - .xls: `$ loffice --convert-to html [XLS_FILE]`
+
 ## JSON data file format
 Below the format of `data.json` and `classes.json`. For the value definitions see below.
 
@@ -63,13 +75,14 @@ Contains all events in `data`.
     }
 
 ### classes.json
-Contains all classes (keys) and their parents (value array elements) in `data`. Header also contains the name of the iCalender directory and whether iCalendar files are "unified" (i.e. contain events from all parents).
+Contains all classes (keys) and their parents (value array elements) in `data`. Header also contains the name of the iCalender directory, whether iCalendar files are "unified" (i.e. contain events from all parents) and whether you should load `data.json` (`load_events`).
 
     {
         json_data_version: VersionString,
         generated: TimeString,
         ical_dir: String,
         unified: Boolean,
+        load_events: Boolean,
         data: {
             Clazz: [ Clazz, Clazz, ... ],
             Clazz: [ Clazz, Clazz, ... ],
@@ -128,6 +141,9 @@ Any object that has a `json_object_keys` set to true has the following structure
 
 ### Version history
 
+#### 1.03
+* Add `load_events` to `classes.json`.
+
 #### 1.02
 * `PlanElement` was replaced by an standard object. Well-known keys:
    * Strings: title, room, time, more, special
@@ -139,18 +155,16 @@ Soon.
 
 ## Contribute
 
-Use a combination of the [git flow](http://nvie.com/posts/a-successful-git-branching-model/), [git rebase](https://randyfay.com/node/91) and [GitHub](https://guides.github.com/introduction/flow/) workflows.
-
-0. [Fork](https://github.com/criztovyl/studienplan5/fork) and clone the repo (GitHub worklow)
-0. Create a new branch off `develop`, e.g. `myfeature` (git-flow workflow)
+0. [Fork](https://github.com/criztovyl/studienplan5/fork) and clone the repo
+0. Create a new branch off `develop`, e.g. `myfeature`
 0. ...do work....
-0. Fetch `develop` from upstream to download code updates (git-rebase workflow)
-0. Rebase your branch on `develop` to apply the code updates to your base code (git-rebase workflow; If nothing changed on `develop` that will do nothing)
-0. Push `myfeature` to upload your changes (any workflow)
-0. Create a pull request. (GitHub workflow)
+0. Fetch `develop` from upstream to download code updates
+0. Rebase your branch on `develop` to apply the code updates to your base code (If nothing changed on `develop` that will do nothing)
+0. Push `myfeature` to upload your changes
+0. Create a pull request.
 
-For the lazy ones:  
-(Unless you use Two-Factor Auth, then you have to add `-H "X-GitHub-OTP: CODE"` with your OTP code instead of `CODE` to `curl`) 
+For the lazy ones, simply copy'n'paste:  
+(Unless you use 2FA, then you have to add `-H "X-GitHub-OTP: CODE"` with your OTP code instead of `CODE` to `curl`) 
 
     read -p "GitHub username: " GHUSER
     curl https://api.github.com/repos/criztovyl/studienplan5/forks -d '{}' -u $GHUSER
@@ -162,13 +176,15 @@ For the lazy ones:
     git rebase origin/develop
     git push
 
+Inspired by [git flow](http://nvie.com/posts/a-successful-git-branching-model/), [git rebase](https://randyfay.com/node/91) and [GitHub](https://guides.github.com/introduction/flow/) workflows.
+
 ## Author
 
 Christoph "criztovyl" Schulz
 
  - [GitHub](https://github.com/criztovyl)
  - [Blog](https://criztovyl.joinout.de)
- - [Twitter @criztovyl](https://twitter.com/criztovyl)
+ - [Twitter](https://twitter.com/criztovyl)
 
 ## License
 GPLv3 and later.
