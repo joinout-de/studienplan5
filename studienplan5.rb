@@ -344,7 +344,7 @@ if data
 
         # Build classes structure. Keys are Clazzes and value array elements are parents.
         data.extra[:classes].each do |key|
-            if key.full_name # TODO What's this? What does it check?
+            if true #key.full_name # TODO What's this? What does it check?
                 export.store(key, [])
                 #
                 # Loop through parents until none is left

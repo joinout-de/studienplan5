@@ -277,7 +277,8 @@ class SemesterplanExtractor
                         if elementType
                             @@logger.debug "Type: #{elementType.inspect}"
 
-                            @data.add_full_week(elementType, rowClass, nil, start)# nil = room
+                            # TODO: Describe better: This is set because first loop never enters here before rowClass is set.
+                            @data.add_full_week(elementType, rowClass, nil, start) # nil = room
 
                         end
 
@@ -523,6 +524,7 @@ class SemesterplanExtractor
                                                     @@logger.debug "Clazz: #{clazz}, Comment: #{comment.inspect}"
 
                                                     @data.push({title: title, class: clazz, room: room, time: pe_start, dur: dur_, more: comment})
+                                                    @data.extra[:classes].add(clazz)
                                                 end
                                             end
                                         else # No exam, groups = groups
@@ -534,6 +536,7 @@ class SemesterplanExtractor
                                                 @@logger.debug "Using defined class #{clazz}"
 
                                                 @data.push({title: title, class: clazz, room: room, time: pe_start, dur: default_dur, lect: lect})
+                                                @data.extra[:classes].add(clazz)
                                                 next # Huh, these jumping again.
                                             end
 
@@ -589,6 +592,8 @@ class SemesterplanExtractor
                                         else # Currently have no example for this in mind, sry. But it's not special. That's good, isn't it? (Found one: "Präs-WP BI2")
                                             @data.push({title: match7, class: rowClass||rowJahrgangClazz, time: pe_start})
                                         end
+
+                                        @data.extra[:classes].add(rowClass||rowJahrgangClazz)
 
                                         @@logger.info "#{match7} with title #{match7}, class #{rowClass||rowJahrgangClazz}, time #{pe_start}."
                                     end # We're done with the information.
