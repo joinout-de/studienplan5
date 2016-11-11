@@ -5,10 +5,16 @@
  * https://github.com/criztovyl/studienplan5
  */
 
-// Data w/ JS classes instead of JSON objects. 0 - keys, 1 - values, 2 - events
+// Data w/ JS classes instead of JSON objects.
+// 0 - keys, Clazz
+// 1 - values, Clazz-es, key's parents
+// 2 - events, key's events
 var classes,
+    // directory ical files are located in
     ical_dir,
+    // whether ical files contain elements of all parents
     unified,
+    // events list from data.json
     events;
 
 function Clazz(name, course, cert, jahrgang, group){
@@ -183,6 +189,7 @@ function loadClasses(default_ical_dir){
             console.error("Unknown/Unspported JSON data version: " + json_data_version.join("."));
         }
 
+        // Magic happens here: undo JSON object keys.
         if(keyys){
             var populate_func = function(data_evts){
 
@@ -191,6 +198,9 @@ function loadClasses(default_ical_dir){
 
                 $(document).ready(function(){
 
+                    // 0 - keys, Clazz
+                    // 1 - values, Clazz-es, key's parents
+                    // 2 - events, key's events
                     classes = [[], [], []];
 
                     var select = $(".inner.cover#usage select").first();
@@ -293,10 +303,13 @@ function hashChange(evt){
         console.log("Hash change!");
 
         var target = window.location.hash; // Location hash incl. #. Keep it.
+
         if(String(target)){
             $(".inner.cover").hide();
 
             var selection_match = target.match(/-selection-(\d+)$/);
+
+            // Remove selection string from target
             if(selection_match) target = target.replace(selection_match[0], "");
 
             $(".inner.cover"  + target).show();
