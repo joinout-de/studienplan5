@@ -238,7 +238,7 @@ function loadClasses(default_ical_dir){
 
                     $.each(keyys, function(index, element){
 
-                        var o_key = Clazz.from_json(element); // Key as Clazz Object
+                        var o_key = Clazz.from_json(element), // Key as Clazz Object
                             o_parents = [],
                             o_events = [],
                             // out-of-loop var to not re-allocate it each loop
