@@ -9,7 +9,9 @@
 var classes,
     ical_dir,
     unified,
-    events;
+    events,
+    // Whether we need to check for Clazz#full_name is set (for <select> opts)
+    checkForFull;
 
 function Clazz(name, course, cert, jahrgang, group){
     this.name = name;
@@ -151,6 +153,8 @@ function loadClasses(default_ical_dir){
             }
 
             switch(Number(json_data_version[1])){
+                case 4:
+                   checkForFull = true;
                 case 3:
                     loadEvents = data.load_events;
                 case 2:
@@ -208,7 +212,8 @@ function loadClasses(default_ical_dir){
                         var o_values = []; // Values as Clazz Objects
 
                         classes[0].push(o_key);
-                        $("<option>").html(o_key.full_name()).attr("value", index).appendTo(select);
+                        if(!checkForFull || o_key.full_name())
+                            $("<option>").html(o_key.full_name()).attr("value", index).appendTo(select);
 
 
                         // Outer "index" is a numeric key, no index. "values" is an Object no Array.

@@ -128,6 +128,9 @@ Any object that has a `json_object_keys` set to true has the following structure
 
 ### Version history
 
+#### 1.04
+* Now exports all `Clazz` objects that appear in events. Previosly exported only "full" Classes, i.e. with all of `NAME`, `COURSE`, `CERT` and `JAHRGANG` set.
+
 #### 1.02
 * `PlanElement` was replaced by an standard object. Well-known keys:
    * Strings: title, room, time, more, special
