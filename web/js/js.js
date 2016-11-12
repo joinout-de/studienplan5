@@ -15,7 +15,9 @@ var classes,
     // whether ical files contain elements of all parents
     unified,
     // events list from data.json
-    events;
+    events,
+    // classes as a hashmap
+    classesTable;
 
 function Clazz(name, course, cert, jahrgang, group){
     this.name = name;
@@ -41,6 +43,21 @@ Clazz.from_json = function(json){
         //console.debug(json);
         return false;
     }
+}
+
+// Make hashCode and equals "static" for use by Clazz internally and Hashtable.
+// Hashtable is faster when you give a equality and hash function to it.
+
+Clazz.hashCode = function(clazz){
+    return 'Clazz-7LrCVhVi:' + [clazz.group, clazz.name, clazz.cert, clazz.course, clazz.jahrgang].join(',');
+}
+
+Clazz.equals = function(clazz, other){
+    return clazz.name == other.name &&
+        clazz.course == other.course &&
+        clazz.cert == other.cert &&
+        clazz.jahrgang == other.jahrgang &&
+        clazz.group == other.group;
 }
 
 Clazz.prototype = {
@@ -128,12 +145,28 @@ Clazz.prototype = {
             return links;
     },
     equals: function(clazz){
-        return this.name == clazz.name &&
-            this.course == clazz.course &&
-            this.cert == clazz.cert &&
-            this.jahrgang == clazz.jahrgang &&
-            this.group == clazz.group;
+        return Clazz.equals(this, clazz);
     },
+    parent: function(){
+
+        var ret = _.clone(this);
+
+        if(this.group)
+            ret.group = null
+        else if(this.name)
+            ret.name = null
+        else if(this.cert)
+            ret.cert = null
+        else if(this.course)
+            ret.course = null
+        else if(this.jahrgang)
+            ret = null
+
+        return ret;
+    },
+    hashCode: function(){
+       return Clazz.hashCode(this);
+    }
 }
 
 function loadClasses(default_ical_dir){
@@ -202,6 +235,7 @@ function loadClasses(default_ical_dir){
                     // 1 - values, Clazz-es, key's parents
                     // 2 - events, key's events
                     classes = [[], [], []];
+                    classesTable = new Hashtable(Clazz.hashCode, Clazz.equals);
 
                     var select = $(".inner.cover#usage select").first();
 
@@ -214,23 +248,38 @@ function loadClasses(default_ical_dir){
 
                     $.each(keyys, function(index, element){
 
-                        var o_key = Clazz.from_json(element); // Key as Clazz Object
-                        var o_values = []; // Values as Clazz Objects
+                        var o_key = Clazz.from_json(element), // Key as Clazz Object
+                            o_parents = [],
+                            o_events = [],
+                            // out-of-loop var to not re-allocate it each loop
+                            clazz;
 
                         classes[0].push(o_key);
                         $("<option>").html(o_key.full_name()).attr("value", index).appendTo(select);
 
-
                         // Outer "index" is a numeric key, no index. "values" is an Object no Array.
                         $.each(values[index], function(index, element){
-                            o_values.push(Clazz.from_json(element))
+
+                            clazz = Clazz.from_json(element)
+
+                            o_parents.push(clazz);
+                            classes[0].push(clazz);
                         });
 
-                        classes[1].push(o_values);
-
-                        classes[2].push(_.filter((events && events.data) || [], function(o){
+                        o_events = _.filter((events && events.data) || [], function(o){
                             return Clazz.from_json(o.class).equals(o_key);
-                        }));
+                        })
+
+                        classes[1].push(o_parents);
+                        classes[2].push(o_events);
+
+                        if(!classesTable.containsKey(o_key))
+                            classesTable.put(o_key, { parents: o_parents, events: o_events });
+                        else {
+                            value_container = classesTable.get(o_key);
+                            value_container.parents = value_container.parents.concat(o_parents);
+                            value_container.events = value_container.events.concat(o_events);
+                        }
 
                     });
 
