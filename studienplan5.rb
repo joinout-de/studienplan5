@@ -182,7 +182,7 @@ end
 #end
 
 # JSON data file version
-$data_version = "1.03"
+$data_version = "1.04"
 
 if data
 
@@ -344,14 +344,13 @@ if data
 
         # Build classes structure. Keys are Clazzes and value array elements are parents.
         data.extra[:classes].each do |key|
-            if key.full_name # TODO What's this? What does it check?
-                export.store(key, [])
-                #
-                # Loop through parents until none is left
-                parent = key
-                while parent = parent.parent
-                    export[key].push parent #if data.extra[:classes].include? parent
-                end
+
+            export.store(key, [])
+
+            # Loop through parents until none is left
+            parent = key
+            while parent = parent.parent
+                export[key].push parent
             end
         end
         json_data[:data] = StudienplanUtil.json_object_keys(export) unless $options[:no_jok]
