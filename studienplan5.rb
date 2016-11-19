@@ -274,6 +274,9 @@ if data
 
         calendars = {}
 
+        # A calendar that contains all events
+        all = cal_stub.dup
+
         unless Dir.exists?(ical_dir)
             Dir.mkdir(ical_dir)
             $logger.info "Would create #{ical_dir}." if $options[:simulate]
@@ -294,7 +297,7 @@ if data
 
             tzid=calendars[clazz].timezones[0].tzid.to_s
 
-            calendars[clazz].event do |evt|
+            event = calendars[clazz].event do |evt|
 
                 formats = { title: "%s", class: "Klasse/Jahrgang: %s", more: "%s", nr: "#%s", room: "%s", lect: "Dozent: %s. " }
                 formats = formats.merge(formats) do |key, oldval, newval|
@@ -335,6 +338,8 @@ if data
                 #evt.uid = "de.joinout.criztovyl.studienplan5.planElement." + clazz.id_str + "." + title+nr # TODO: UID. This is not unique, find something.
             end
 
+            all.add_event event
+
         end
 
         unless no_unified
@@ -355,6 +360,16 @@ if data
         end
 
         $logger.info "Writing calendars..."
+
+        $logger.info "Writing all-in-one calendar..."
+
+        if $options[:simulate]
+            $logger.info "Would write all.ical"
+        else
+            File.open(ical_dir + File::SEPARATOR + "all.ical", "w+") do |f|
+                f.puts all.to_ical
+            end
+        end
 
         calendars.each_pair do |clazz, cal|
 
