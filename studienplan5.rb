@@ -48,6 +48,7 @@ require_relative "extractor_ausbildungsplan"
 ical_dir = "ical"
 data_file = "data.json"
 classes_file = "classes.json"
+extr_config_file = "extr_config.yml"
 
 # Command line opts
 $options = {
@@ -189,8 +190,6 @@ if outp
         end
     end
 end
-
-extr_config_file = "extr_config.yml"
 
 if File.exists? extr_config_file
 
@@ -336,7 +335,7 @@ if data
                 else
                     evt.dtend = Icalendar::Values::DateTime.new time + 1/24.0, 'tzid' => tzid # Events must have end thats not equal to start, set dur 60 min (also see above)
                     comment += "\nIm Plan wurde keine Dauer angegeben, daher auf 60 Minuten gesetzt."
-                    $logger.warn "Element with unknown Duration!"
+                    $logger.warn "Element with unknown Duration! Title: #{elem[:title].inspect}"
                 end
 
                 evt.summary = formats[:title] + formats[:nr]
@@ -372,9 +371,9 @@ if data
 
         if $options[:all_ics]
 
-            $logger.info "Writing all-in-one calendar..."
-
             all_ics_path = icals_path + File::SEPARATOR + "all.ical"
+
+            $logger.info "Writing calendar file \"#{all_ics_path}\" containing all events..."
 
             if $options[:simulate]
                 $logger.info "Would write #{all_ics_path}"
@@ -430,6 +429,7 @@ if data
                 export[key].push parent
             end
         end
+
         json_data[:data] = StudienplanUtil.json_object_keys(export) unless $options[:no_jok]
 
         $logger.debug "Writing JSON classes file \"%s\"" % classes_path
