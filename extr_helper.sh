@@ -35,6 +35,8 @@ EXIT_AUSBPLAN_NON_PDF=3
 EXIT_MOODLE_ALREADY_THERE=4
 EXIT_AUSBPLAN_ALREADY_THERE=5
 
+trap "exit" "SIGINT"
+
 # 2 - Functions
 
 display_usage() {
@@ -177,7 +179,9 @@ case "$Action" in
 
         [[ "$MOODLE_DL_USER" ]] || { echo "Missing download user. Is EXTR_HELPER_MOODLE_DL_USER set?" >&2; exit $EXIT_MISSING_DL_USER; }
 
-        curl -d username=$MOODLE_DL_USER -d password=`read -sp "Moodle Password for $MOODLE_DL_USER: " && echo $REPLY` http://siemens.lernvision.de/login/index.php $Src --cookie-jar "$Cookie_File" -o /dev/null -o "$Download_Target/$Src_Name"
+        password=$( EXTR_HELPER_MOODLE_DL_PASSASK 2>/dev/null || { read -sp "Moodle Password for $MOODLE_DL_USER: " && echo $REPLY; } )
+
+        curl -d username=$MOODLE_DL_USER -d "password=$password" http://siemens.lernvision.de/login/index.php $Src --cookie-jar "$Cookie_File" -o /dev/null -o "$Download_Target/$Src_Name"
 
         bash $0 moodle "$Download_Target/$Src_Name"
         ;;
