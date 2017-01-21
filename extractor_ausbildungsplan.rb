@@ -4,42 +4,64 @@ require_relative "structs"
 
 class ExtractorAusbildungsplan
 
-	attr_reader :data
+    attr_reader :data
 
-	def initialize(file)
-		@file = file
-		@data = nil
-	end
+    def initialize(file)
+        @file = file
+        @data = Plan.new "Ausbildungsplan"
+    end
 
-	def extract()
-		klasse = Clazz.new("FS151","BSc","FST","ABB2015")
-		planElemente=[]
-		inhalt = JSON.parse(@file.readlines.join(?\n))
-		inhalt.shift
-		woche=""
-		zeitraum=""
-		freieTage=""
-		taetigkeit=""
-		for zeile in 0..4
-			for spalte in 0..10
-				zx4=zeile*4;
-				woche = inhalt[zx4][spalte]["text"]
-				zeitraum = inhalt[zx4+1][spalte]["text"]
-				freieTage = inhalt[zx4+2][spalte]["text"]
-				if(inhalt[zx4+3][spalte]["text"] != "")
-					taetigkeit = inhalt[zx4+3][spalte]["text"]
-				end
-				next if woche.empty?
-				#puts woche
-				#puts zeitraum
-				#puts freieTage
-				#puts taetigkeit
-				#puts ""
-				#puts ""
-				planElemente.push(Struct::PlanElement::FullWeek(taetigkeit,klasse,nil,DateTime.strptime("1 "+woche+" 20"+zeitraum[-2,2],"%u KW %W %Y"),freieTage))
-			end
-		end
-		@data={klasse => planElemente}
-	end
+    def extract()
+
+        woche=""
+        zeitraum=""
+        comment=""
+        taetigkeit=""
+        klasse = Clazz.new("FS151","BSc","FST","ABB2015")
+
+        inhalt = JSON.parse(@file.readlines.join(?\n).gsub("\\r", " ").gsub(/- (\w)/, "\\1").gsub(/ +/, " "))
+
+        inhalt.shift
+
+        for zeile in 0..4
+            for spalte in 0..10
+
+                zx4=zeile*4;
+
+                woche = inhalt[zx4][spalte]["text"]
+                zeitraum = inhalt[zx4+1][spalte]["text"]
+
+                if !(freieTage = inhalt[zx4+2][spalte]["text"]).empty?
+                    comment = "Freie Tage: #{freieTage}."
+                end
+
+                if inhalt[zx4+3][spalte]["text"] != ""
+                    taetigkeit = inhalt[zx4+3][spalte]["text"]
+                end
+
+                taetigkeit = case taetigkeit
+                             when /^Studienpräsenzwochen?$/ then "Studienpräsenz"
+                             when /^Betriebliche Praxis (\d+)$/
+                                 comment += (comment.empty? ? "" : " ") + "Nr: #$1"
+                                 "Praxis"
+                             when /^ATIW Block (\d+)$/
+                                 comment += (comment.empty? ? "" : " ") + "Nr: #$1"
+                                 "ATIW"
+                             else taetigkeit
+                             end
+
+                next if woche.empty?
+
+                @data.push({
+                    title: taetigkeit,
+                    class: klasse,
+                    time: DateTime.strptime("1 "+woche+" 20"+zeitraum[-2,2],"%u KW %W %Y"),
+                    special: :fullWeek,
+                    comment: comment
+                })
+            end
+        end
+        @data
+    end
 
 end
