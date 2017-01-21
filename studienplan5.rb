@@ -37,6 +37,7 @@ require "json/add/struct"
 require "optparse"
 require "fileutils"
 require "tzinfo"
+require "yaml"
 
 require_relative "util"; include StudienplanUtil
 require_relative "structs"
@@ -49,14 +50,21 @@ data_file = "data.json"
 classes_file = "classes.json"
 
 # Command line opts
-$options = {}
+$options = {
+    extr_cfg: true
+}
+
+# Data from extractors
+data = Plan.new "Studienplan5"
 
 OptionParser.new do |opts|
 
-    opts.banner = "Usage: %s [options] [FILE]" % $0
+    opts.banner = "Usage: %s [options]" % $0
     opts.separator ""
-    opts.separator "FILE is a HTMLed XLS Studienplan."
-    opts.separator "FILE is optional to be able to do -w/--web without reparsing everything."
+    opts.separator "Extractors:"
+    opts.separator "  --semplan file"
+    opts.separator "  --ausbplan file"
+    opts.separator "For usage see below."
     opts.separator ""
 
     opts.on("-c", "--calendar", "Generate iCalendar files to \"ical\" directory. (Change with --calendar-dir)") do |c|
@@ -115,6 +123,29 @@ OptionParser.new do |opts|
         $options[:no_events] = true
     end
 
+    opts.on("--[no-]extr-config", "Do (not) read extr_helper.yml. Default: Read.") do |extr_cfg|
+        $options[:extr_cfg] = extr_cfg
+    end
+
+    # Extractors
+    # TODO: Move extr_helper-code here (studienplan5) or to extractors. Maybe management here, converting in extractors.
+    #
+
+    opts.on("--semplan FILE", "Extract data from a HTMLed XLS Studienplan. Use extr_helper for XLS -> HTML.") do |semplan|
+        File.open(semplan, "rb") do |f|
+            data = data.merge SemesterplanExtractor.new(f).extract
+        end
+    end
+
+    opts.on("--ausbplan FILE", "Extract data from a JSONed PDF Ausbildungsplan. Use extr_helper for PDF -> JSON.") do |semplan|
+        File.open(semplan, "rb") do |f|
+            data = data.merge Ausbildungsplan.new(f).extract
+        end
+    end
+
+    # Help
+    #
+
     opts.on("-h", "--help", "Print this help.") do |h|
         puts opts
         exit
@@ -150,18 +181,33 @@ if outp
     end
 end
 
-data = nil
+extr_config_file = "extr_config.yml"
 
-if file1 = ARGV[0] and file2 = ARGV[1]
+if File.exists? extr_config_file
 
-    data1, data2 = nil
+    if extr_config = YAML.load_file(extr_config_file)
+        extr_config.map do |extr|
 
-    File.open(file1, "rb") do |f| data1 = SemesterplanExtractor.new(f).extract; end
-    File.open(file2, "rb") do |f| data2 = ExtractorAusbildungsplan.new(f).extract; end
+            if extr["type"] and file_path = extr["file"] and File.exists? file_path
 
-    data = data1.merge data2
+                File.open file_path, "rb" do |f|
+
+                    case extr["type"]
+                    when /^sem(ester)?plan$/ then SemesterplanExtractor.new(f).extract
+                    when /^ausb(ildungs)plan$/ then ExtractorAusbildungsplan.new(f).extract
+                    end
+
+                end
+
+            end
+
+        end.each {|extr| data = data.merge extr }
+    else
+        $logger.warn "Config file empty!"
+    end
+
 else
-    $logger.info "No file(s)."
+    $logger.warn "Missing config file!"
 end
 
 # unified: :only_self, :no_self, nil
