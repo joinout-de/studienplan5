@@ -189,6 +189,9 @@ if data
     $logger.debug "We have data."
     $logger.debug $options.inspect
 
+    $logger.debug "Remove duplicates..."
+    data.elements.uniq! {|e| [e[:time], e[:title], e[:class], e[:special]] }
+
     if $options[:json]
 
         $logger.debug "Option :json"
