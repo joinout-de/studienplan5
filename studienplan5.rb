@@ -162,12 +162,16 @@ if $options[:cal_dir]
     ical_dir = $options[:cal_dir]
 end
 
+icals_path = nil
+data_path=nil
+classes_path = nil
+
 outp = $options[:output]
 if outp
     if outp.end_with?(?/)
-        ical_dir = outp + ical_dir
-        data_file = outp + data_file
-        classes_file = outp + classes_file
+        icals_path = outp + ical_dir
+        data_path = outp + data_file
+        classes_path = outp + classes_file
 
         unless Dir.exists? outp
             Dir.mkdir(outp)
@@ -175,9 +179,9 @@ if outp
         end
 
     else
-        ical_dir = outp
-        data_file = outp + ".data.json"
-        classes_file = outp + ".classes.json"
+        icals_path = outp
+        data_path = outp + ".data.json"
+        classes_path = outp + ".classes.json"
 
         if $options[:cal_dir]
             $logger.error "Specified calendar dir name but output is not specified as directory"
@@ -253,17 +257,17 @@ if data
             data: data.elements
         }
 
-        $logger.debug "Writing JSON data file \"%s\"" % data_file
+        $logger.debug "Writing JSON data file \"%s\"" % data_path
 
         if $options[:simulate]
-            $logger.info "Would write #{data_file}"
+            $logger.info "Would write #{data_path}"
         else
-            File.open(data_file, "w+") do |datafile|
+            File.open(data_path, "w+") do |datafile|
                 datafile.puts $options[:json_pretty] ? JSON.pretty_generate(json_data) : JSON.generate(json_data)
             end
         end
 
-        $logger.info "Wrote JSON data file \"%s\"" % data_file
+        $logger.info "Wrote JSON data file \"%s\"" % data_path
     end
 
     if $options[:ical]
@@ -282,9 +286,9 @@ if data
         # A calendar that contains all events
         all = cal_stub.dup
 
-        unless Dir.exists?(ical_dir)
-            Dir.mkdir(ical_dir)
-            $logger.info "Would create #{ical_dir}." if $options[:simulate]
+        unless Dir.exists?(icals_path)
+            Dir.mkdir(icals_path)
+            $logger.info "Would create #{icals_path}." if $options[:simulate]
         end
 
         $logger.info "Writing unified calendars." unless no_unified
@@ -370,7 +374,7 @@ if data
 
             $logger.info "Writing all-in-one calendar..."
 
-            all_ics_path = ical_dir + File::SEPARATOR + "all.ical"
+            all_ics_path = icals_path + File::SEPARATOR + "all.ical"
 
             if $options[:simulate]
                 $logger.info "Would write #{all_ics_path}"
@@ -384,7 +388,7 @@ if data
 
             $logger.debug "Class: #{clazz.inspect}"
 
-            clazz_file = ical_dir + File::SEPARATOR + StudienplanUtil.class_ical_name(clazz) + ".ical"
+            clazz_file = icals_path + File::SEPARATOR + StudienplanUtil.class_ical_name(clazz) + ".ical"
             clazz_file.gsub!(/\.ical/, ".unified.ical") unless no_unified
 
             $logger.info "Writing calendar file \"%s\"" % clazz_file
@@ -398,7 +402,7 @@ if data
             end
         end
 
-        $logger.info "Wrote calendar files to \"%s\"" % ical_dir
+        $logger.info "Wrote calendar files to \"%s\"" % icals_path
     end
 
     if $options[:classes]
@@ -428,17 +432,17 @@ if data
         end
         json_data[:data] = StudienplanUtil.json_object_keys(export) unless $options[:no_jok]
 
-        $logger.debug "Writing JSON classes file \"%s\"" % classes_file
+        $logger.debug "Writing JSON classes file \"%s\"" % classes_path
 
         if $options[:simulate]
-            $logger.info "Would write #{classes_file}"
+            $logger.info "Would write #{classes_path}"
         else
-            File.open(classes_file, "w+") do |datafile|
+            File.open(classes_path, "w+") do |datafile|
                 datafile.puts $options[:json_pretty] ? JSON.pretty_generate(json_data) : JSON.generate(json_data)
             end
         end
 
-        $logger.info "Wrote JSON classes file \"%s\"" % classes_file
+        $logger.info "Wrote JSON classes file \"%s\"" % classes_path
     end
 else
     $logger.info "No data"
@@ -460,9 +464,9 @@ if $options[:web] and $options[:output] and $options[:output].end_with?(?/)
     else
         FileUtils.cp_r web_dir, o
         if not $options[:no_apache]
-            if Dir.exists? ical_dir
-                FileUtils.mv o + "indexes_header.html", ical_dir
-                FileUtils.cp o + "cover.css", ical_dir + sep + "indexes_css.css"
+            if Dir.exists? icals_path
+                FileUtils.mv o + "indexes_header.html", icals_path
+                FileUtils.cp o + "cover.css", icals_path + sep + "indexes_css.css"
             else
                 $logger.info "Target dir for icals does not exist, please specify it's name by --calendar-dir to enable custom Apache indexes style."
             end
