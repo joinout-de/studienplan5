@@ -51,7 +51,8 @@ classes_file = "classes.json"
 
 # Command line opts
 $options = {
-    extr_cfg: true
+    extr_cfg: true,
+    all_ics: false,
 }
 
 # Data from extractors
@@ -125,6 +126,10 @@ OptionParser.new do |opts|
 
     opts.on("--[no-]extr-config", "Do (not) read extr_helper.yml. Default: Read.") do |extr_cfg|
         $options[:extr_cfg] = extr_cfg
+    end
+
+    opts.on("--[no-]all-ics", "Do (not) write an ICS file containing all events. Default: Do not write.") do |all_ics|
+        $options[:all_ics] = all_ics;
     end
 
     # Extractors
@@ -361,14 +366,18 @@ if data
 
         $logger.info "Writing calendars..."
 
-        $logger.info "Writing all-in-one calendar..."
+        if $options[:all_ics]
 
-        if $options[:simulate]
-            $logger.info "Would write all.ical"
-        else
-            File.open(ical_dir + File::SEPARATOR + "all.ical", "w+") do |f|
-                f.puts all.to_ical
+            $logger.info "Writing all-in-one calendar..."
+
+            all_ics_path = ical_dir + File::SEPARATOR + "all.ical"
+
+            if $options[:simulate]
+                $logger.info "Would write #{all_ics_path}"
+            else
+                File.open(all_ics_path, "w+"){|f| f.puts all.to_ical }
             end
+
         end
 
         calendars.each_pair do |clazz, cal|
