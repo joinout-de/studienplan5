@@ -93,10 +93,6 @@ OptionParser.new do |opts|
         $options[:json_pretty] = jp
     end
 
-    opts.on("-w", "--web", "Export simple web-page for browsing generated icals. Does nothing unless -o/--output is a directory.") do |web|
-        $options[:web] = web
-    end
-
     opts.on("-n", "--calendar-dir NAME", "Name for the diretory containing the iCal files. Program exits status 5 if -o/--output is specified and not a directory.") do |cal_dir|
         $options[:cal_dir] = cal_dir
     end
@@ -446,35 +442,4 @@ if data
     end
 else
     $logger.info "No data"
-end
-
-if $options[:web] and $options[:output] and $options[:output].end_with?(?/)
-
-    $logger.debug "Option :web"
-
-    wd = File.dirname File.realpath(__FILE__) # Working Directory (the directory of this file)
-    sep = File::SEPARATOR
-    o = $options[:output] # Output
-    web_dir = wd + "/web/."
-
-    $logger.info "Copying web content from %s to %s" % [web_dir, o]
-
-    if $options[:simulate]
-        $logger.info "Would copy the files..."
-    else
-        FileUtils.cp_r web_dir, o
-        if not $options[:no_apache]
-            if Dir.exists? icals_path
-                FileUtils.mv o + "indexes_header.html", icals_path
-                FileUtils.cp o + "cover.css", icals_path + sep + "indexes_css.css"
-            else
-                $logger.info "Target dir for icals does not exist, please specify it's name by --calendar-dir to enable custom Apache indexes style."
-            end
-        else
-            FileUtils.rm [o + ".htaccess", o + "indexes_header.html"]
-        end
-    end
-
-    $logger.warn "You haven't exported classes (-d/--classes) yet but they are required by -w/--web!" unless File.exists?(o+"classes.json")
-    $logger.debug "Copied."
 end
