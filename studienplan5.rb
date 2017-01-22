@@ -51,7 +51,8 @@ classes_file = "classes.json"
 
 # Command line opts
 $options = {
-    extr_cfg: true
+    extr_cfg: true,
+    all_ics: false,
 }
 
 # Data from extractors
@@ -125,6 +126,10 @@ OptionParser.new do |opts|
 
     opts.on("--[no-]extr-config", "Do (not) read extr_helper.yml. Default: Read.") do |extr_cfg|
         $options[:extr_cfg] = extr_cfg
+    end
+
+    opts.on("--[no-]all-ics", "Do (not) write an ICS file containing all events. Default: Do not write.") do |all_ics|
+        $options[:all_ics] = all_ics;
     end
 
     # Extractors
@@ -274,6 +279,9 @@ if data
 
         calendars = {}
 
+        # A calendar that contains all events
+        all = cal_stub.dup
+
         unless Dir.exists?(ical_dir)
             Dir.mkdir(ical_dir)
             $logger.info "Would create #{ical_dir}." if $options[:simulate]
@@ -294,7 +302,7 @@ if data
 
             tzid=calendars[clazz].timezones[0].tzid.to_s
 
-            calendars[clazz].event do |evt|
+            event = calendars[clazz].event do |evt|
 
                 formats = { title: "%s", class: "Klasse/Jahrgang: %s", more: "%s", nr: "#%s", room: "%s", lect: "Dozent: %s. " }
                 formats = formats.merge(formats) do |key, oldval, newval|
@@ -335,6 +343,8 @@ if data
                 #evt.uid = "de.joinout.criztovyl.studienplan5.planElement." + clazz.id_str + "." + title+nr # TODO: UID. This is not unique, find something.
             end
 
+            all.add_event event
+
         end
 
         unless no_unified
@@ -355,6 +365,20 @@ if data
         end
 
         $logger.info "Writing calendars..."
+
+        if $options[:all_ics]
+
+            $logger.info "Writing all-in-one calendar..."
+
+            all_ics_path = ical_dir + File::SEPARATOR + "all.ical"
+
+            if $options[:simulate]
+                $logger.info "Would write #{all_ics_path}"
+            else
+                File.open(all_ics_path, "w+"){|f| f.puts all.to_ical }
+            end
+
+        end
 
         calendars.each_pair do |clazz, cal|
 
