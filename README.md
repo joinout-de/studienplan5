@@ -1,5 +1,5 @@
 # studienplan5.rb
-A utility to convert and present ugly plans, unified in one file.
+A utility to convert ugly plans, grouped by classes.
 
 It's under heavy development, so please take a look at other [branches](https://github.com/joinout-de/studienplan5/branches).
 
@@ -151,7 +151,7 @@ Any object that has a `json_object_keys` set to true has the following structure
 * The file "headers" no longer contains `json_object_keys`, moved to the object that has the object keys.
 
 #### 1.01
-Soon.
+tbd
 
 ## Contribute
 
