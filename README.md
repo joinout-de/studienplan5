@@ -16,21 +16,28 @@ With [Bundler](https://bundler.io/):
 
 ## Usage
 
-    Usage: ./studienplan5.rb [options] [FILE]
+    Usage: ./studienplan5.rb [options]
 
-    FILE is a HTMLed XLS Studienplan.
-    FILE is optional to be able to do -w/--web without reparsing everything.
+    Extractors:
+      --semplan file
+      --ausbplan file
+    For usage see below.
 
         -c, --calendar                   Generate iCalendar files to "ical" directory. (Change with --calendar-dir)
         -j, --json                       Generate JSON data file (data.json).
         -d, --classes                    Generate JSON classes structure (classes.json).
-        -o, --output NAME                Specify output target, if ends with slash, will be output directory. If not, will be name of calendar dir and suffix for JSON files.
-        -k, --disable-json-object-keys   Stringify hash keys.
+        -o, --output NAME                Specify output target, if ends with slash, will be output directory. If not, will be name of calendar dir and prefix for JSON files.
         -p, --json-pretty                Write pretty JSON data.
-        -w, --web                        Export simple web-page for browsing generated icals. Does nothing unless -o/--output is a directory.
         -n, --calendar-dir NAME          Name for the diretory containing the iCal files. Program exits status 5 if -o/--output is specified and not a directory.
-        -u, --disable-unified            Do not create files that contain all parent events recursively.
-        -a, --disable-apache-config      Do not export .htaccess and other Apache-specific customizations.
+        -u, --[no-]unified               Do (not) create files that contain all parent events recursively. Default: Create.
+        -s, --simulate                   Simulate, do not write files or create directories.
+        -q, --quiet                      Do not print data.
+        -l, --level [LEVEL]              Log level (fatal, error, warn, info, debug)
+            --[no-]load-events           Set the flag (not) to load data.json. Flag is in classes.json. Default: Set/Load.
+            --[no-]extr-config           Do (not) read extr_helper.yml. Default: Read.
+            --[no-]all-ics               Do (not) write an ICS file containing all events. Default: Do not write.
+            --semplan FILE               Extract data from a HTMLed XLS Studienplan. Use extr_helper for XLS -> HTML.
+            --ausbplan FILE              Extract data from a JSONed PDF Ausbildungsplan. Use extr_helper for PDF -> JSON.
         -h, --help                       Print this help.
 
 ## Converting files
@@ -56,6 +63,7 @@ Use `extr_helper.sh`:
     ausbildungsplan  : data/src/pdf/file.pdf --   Tabula    --> data/conv/json/file.json
 
 Or convert manually:
+
  - .pdf: `$ tabula --spreadsheet --use-line-returns --format JSON [PDF_FILE] > [JSON_FILE]`
  - .xls: `$ loffice --convert-to html [XLS_FILE]`
 
