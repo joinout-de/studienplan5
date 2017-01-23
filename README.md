@@ -5,8 +5,10 @@ It's under heavy development, so please take a look at other [branches](https://
 
 ## Requirements
 
- - Nokogiri
- - iCalendar
+ - Nokogiri (`gem install nokogiri`)
+ - iCalendar (`gem install icalendar`)
+ - tzinfo (`gem install tzinfo`)
+ - tzinfo-data (`gem install tzinfo-data`)
 
 With [Bundler](https://bundler.io/):
 
