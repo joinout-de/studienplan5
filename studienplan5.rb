@@ -101,10 +101,6 @@ OptionParser.new do |opts|
         $options[:no_unified] = u
     end
 
-    opts.on("-a", "--disable-apache-config", "Do not export .htaccess and other Apache-specific customizations.") do |no_apache|
-        $options[:no_apache] = no_apache
-    end
-
     opts.on("-s", "--simulate", "Simulate, do not write files or create directories.") do |simulate|
         $options[:simulate] = simulate
     end
