@@ -1,8 +1,6 @@
 # studienplan5.rb
 A utility to convert ugly plans, grouped by classes.
 
-It's under heavy development, so please take a look at other [branches](https://github.com/joinout-de/studienplan5/branches).
-
 ## Requirements
 
  - Nokogiri (`gem install nokogiri`)
