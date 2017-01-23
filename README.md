@@ -1,141 +1,181 @@
 # studienplan5.rb
-A utility to convert HTMLed-XLS Studienpläne into iCals.
-
-It's under heavy development, so please take a look at other [branches](https://github.com/joinout-de/studienplan5/branches).
+A utility to convert ugly plans, grouped by classes.
 
 ## Requirements
 
- - Nokogiri
- - iCalendar
+ - Nokogiri (`gem install nokogiri`)
+ - iCalendar (`gem install icalendar`)
+ - tzinfo (`gem install tzinfo`)
+ - tzinfo-data (`gem install tzinfo-data`)
 
 With [Bundler](https://bundler.io/):
 
     $ bundler install
 
-
-## XLS -> HTML
-
-Use LibreOffice. My version\* also exports comments.
-
-    loffice --convert-to html XLS_file
-
-or
-
-    soffice --convert-to html XLS_file
-
-
-\* LibreOffice 5.1.2.1.0 10m0(Build:1)
-
 ## Usage
 
-    Usage: ./studienplan5.rb [options] [FILE]
+    Usage: ./studienplan5.rb [options]
 
-    FILE is a HTMLed XLS Studienplan.
-    FILE is optional to be able to do -w/--web without reparsing everything.
+    Extractors:
+      --semplan file
+      --ausbplan file
+    For usage see below.
 
         -c, --calendar                   Generate iCalendar files to "ical" directory. (Change with --calendar-dir)
         -j, --json                       Generate JSON data file (data.json).
         -d, --classes                    Generate JSON classes structure (classes.json).
-        -o, --output NAME                Specify output target, if ends with slash, will be output directory. If not, will be name of calendar dir and suffix for JSON files.
-        -k, --disable-json-object-keys   Stringify hash keys.
+        -o, --output NAME                Specify output target, if ends with slash, will be output directory. If not, will be name of calendar dir and prefix for JSON files.
         -p, --json-pretty                Write pretty JSON data.
-        -w, --web                        Export simple web-page for browsing generated icals. Does nothing unless -o/--output is a directory.
         -n, --calendar-dir NAME          Name for the diretory containing the iCal files. Program exits status 5 if -o/--output is specified and not a directory.
-        -u, --disable-unified            Do not create files that contain all parent events recursively.
-        -a, --disable-apache-config      Do not export .htaccess and other Apache-specific customizations.
+        -u, --[no-]unified               Do (not) create files that contain all parent events recursively. Default: Create.
+        -s, --simulate                   Simulate, do not write files or create directories.
+        -q, --quiet                      Do not print data.
+        -l, --level [LEVEL]              Log level (fatal, error, warn, info, debug)
+            --[no-]load-events           Set the flag (not) to load data.json. Flag is in classes.json. Default: Set/Load.
+            --[no-]extr-config           Do (not) read extr_helper.yml. Default: Read.
+            --[no-]all-ics               Do (not) write an ICS file containing all events. Default: Do not write.
+            --semplan FILE               Extract data from a HTMLed XLS Studienplan. Use extr_helper for XLS -> HTML.
+            --ausbplan FILE              Extract data from a JSONed PDF Ausbildungsplan. Use extr_helper for PDF -> JSON.
         -h, --help                       Print this help.
 
+## Converting files
+
+Use `extr_helper.sh`:
+
+    Usage: ./extr_helper.sh extractor file [force|overwrite|reparse]
+
+    Copies the file to it's corresponding directory in data/src, with unique prefix
+    Extracts the data from the file, and stores output in corresponding directory in data/conv
+
+    Extractors: moodle moodle-dl ausbplan|ausb_plan|ausbildungsplan
+
+      moodle extracts from XLS file, aka ABB_Gesamtplan_Moodle.xls
+      moodle-dl downloads the file from moodle (user and pw required) and then calls the above on the downloaded file.
+      ausbildungsplan extracts from Ausbildungsplan_[...].pdf
+
+    force disables extr_helper check for the correct filetype
+    overwrite overwrites files that already exist in the corresponding data/src
+    reparse reparses the file if it already exists in the corresponding data/src
+
+    moodle, moodle-dl: data/src/xls/file.xls -- LibreOffice --> data/conv/html/file.html
+    ausbildungsplan  : data/src/pdf/file.pdf --   Tabula    --> data/conv/json/file.json
+
+Or convert manually:
+
+ - .pdf: `$ tabula --spreadsheet --use-line-returns --format JSON [PDF_FILE] > [JSON_FILE]`
+ - .xls: `$ loffice --convert-to html [XLS_FILE]`
+
 ## JSON data file format
+Below the format of `data.json` and `classes.json`. For the value definitions see below.
+
+### data.json
+Contains all events in `data`.
 
     {
-        json_object_keys: Bool,
-        json_data_version: "x.y",
-        generated: "%Y-%m-%d %H:%M:%S %z",
-        data:  ...
+        json_data_version: VersionString,
+        generated: TimeString,
+        data:  [
+            Element,
+            Element,
+            Element,
+            ...
+        ]
     }
 
-`json_data_version` is 1.0
+### classes.json
+Contains all classes (keys) and their parents (value array elements) in `data`. Header also contains the name of the iCalender directory, whether iCalendar files are "unified" (i.e. contain events from all parents) and whether you should load `data.json` (`load_events`).
 
-### When `json_object_keys` is true
-...`data` is an nested Array. At index 0 are the real keys, at index 1 is the hash where the keys are the index of the real key.
-This is for preserving the Hash key objects. (JSON does not allow objects as keys)
-
-
-    [
-        [
-            class,
-            class,
-            ...
-        ],
-        {
-            0: [
-                element,
-                element,
-                ...
-            ],
-            1: [
-                element,
-                element,
-                ...
-            ],
+    {
+        json_data_version: VersionString,
+        generated: TimeString,
+        ical_dir: String,
+        unified: Boolean,
+        load_events: Boolean,
+        data: {
+            Clazz: [ Clazz, Clazz, ... ],
+            Clazz: [ Clazz, Clazz, ... ],
+            Clazz: [ Clazz, Clazz, ... ],
             ...
         }
-    ]
-
- - `element` is `{ "json_class": "PlanElement", "v": [ TITLE, CLASS, ROOM, TIME, DUR, LECT, NR, SPECIAL, MORE ] }`
-  + `class`/`CLASS` is `{ "json_class": "Clazz", "v": [ NAME, COURSE, CERT, JAHRGANG, GROUP ]`
-
-### When it's false
-...`data` is a hash, the keys are stringified as described below and the values are list's of `element`s, as the values above.
-
-    {
-        class: [
-            element,
-            element,
-            ...
-        ],
-        class: [
-            element,
-            element,
-            ...
-        ],
-        ...
     }
 
-`class` is `Jahrgang JAHRGANG, CLASS, Course COURSE, Cert. CERT` (CLASS, COURSE and CERT are optional and can be missing, including corresponding text and comma)
+`Clazz` is an object, but JSON does not support object as keys, see next:
+
+### JSON object keys
+Any object that has a `json_object_keys` set to true has the following structure:
+
+    {
+        json_object_keys: true,
+        keys: [
+            key,
+            key,
+            key,
+            ...
+        ],
+        values: {
+            key_index: value,
+            key_index: value,
+            key_index: value,
+            ...
+        }
+    }
 
 ### Values
 
- - TITLE: String
- - CLASS: `class` or String
- - ROOM: String
- - TIME: %Y-%m-%d %H:%M:%S %z
- - DUR: String (Rationale, i.e "3/4")
- - LECT: String; Lecturer
- - NR: String; Event number (#1, #2, ...)
- - SPECIAL: String; Currently only "fullWeek" to indicate event from Mon-Fri.
- - MORE: String; Comment.
+* `VersionString`: String.
+    - "major.minor"
+* `TimeString`: String.
+    - "%Y-%m-%d %H:%M:%S %z" (strftime)
+* `Element`: Object. Well-known keys (expect `null` values):
+    - title: String, never `null`
+    - class: `Clazz`, never `null`
+    - room: String
+    - time: String, never `null`
+    - dur: String, Rationale, e.g. `"3/4"`; Duration (either this or `special: "fullWeek"` is always set)
+    - lect: String; Lecturer
+    - nr: String, Integer; Event number (#1, #2, ...)
+    - special: Currently only `"fullWeek"` (String, Symbol) to indicate event from Mon-Fri. (either this or `dur` is always set)
+    - more: String; Comment.
+* `Clazz`. Object.
+    - `{ "json_class": "Clazz", "v": [ NAME, COURSE, CERT, JAHRGANG, GROUP ] }`
+    - `NAME`: String; Class name
+    - `COURSE`: String; "BSc" or "BA"
+    - `CERT`: String; "Fachberater", i.e. "FST", "FIS"
+    - `JAHRGANG`: String; Name of the group of classes entered the training/studies in the same year.
+    - `GROUP`: String; Group ID withing Jahrgang (one char)
+* `ClazzString`: String.
+    - `Clazz` as String, see above.
+    - `Jahrgang JAHRGANG, NAME, Course COURSE, Cert. CERT` (`NAME`, `COURSE` and `CERT` are optional and can be missing, including corresponding text and comma)
 
- - NAME: String; Class name
- - COURSE: String; "BSc" or "BA"
- - CERT: String; "Fachberater", i.e. "FST", "FIS"
- - JAHRGANG: String; Name of the group of classes entered the training/studies in the same year.
- - GROUP: String; Group ID withing Jahrgang (one char)
+### Version history
+
+#### 1.04
+* Now exports all `Clazz` objects that appear in events. Previosly exported only "full" Classes, i.e. with all of `NAME`, `COURSE`, `CERT` and `JAHRGANG` set.
+
+#### 1.03
+* Add `load_events` to `classes.json`.
+
+#### 1.02
+* `PlanElement` was replaced by an standard object. Well-known keys:
+   * Strings: title, room, time, more, special
+   * Clazz: class
+* The file "headers" no longer contains `json_object_keys`, moved to the object that has the object keys.
+
+#### 1.01
+tbd
 
 ## Contribute
 
-Use a combination of the [git flow](http://nvie.com/posts/a-successful-git-branching-model/), [git rebase](https://randyfay.com/node/91) and [GitHub](https://guides.github.com/introduction/flow/) workflows.
-
-0. [Fork](https://github.com/criztovyl/studienplan5/fork) and clone the repo (GitHub worklow)
-0. Create a new branch off `develop`, e.g. `myfeature` (git-flow workflow)
+0. [Fork](https://github.com/criztovyl/studienplan5/fork) and clone the repo
+0. Create a new branch off `develop`, e.g. `myfeature`
 0. ...do work....
-0. Fetch `develop` from upstream to download code updates (git-rebase workflow)
-0. Rebase your branch on `develop` to apply the code updates to your base code (git-rebase workflow; If nothing changed on `develop` that will do nothing)
-0. Push `myfeature` to upload your changes (any workflow)
-0. Create a pull request. (GitHub workflow)
+0. Fetch `develop` from upstream to download code updates
+0. Rebase your branch on `develop` to apply the code updates to your base code (If nothing changed on `develop` that will do nothing)
+0. Push `myfeature` to upload your changes
+0. Create a pull request.
 
-For the lazy ones:  
-(Unless you use Two-Factor Auth, then you have to add `-H "X-GitHub-OTP: CODE"` with your OTP code instead of `CODE` to `curl`) 
+For the lazy ones, simply copy'n'paste:  
+(Unless you use 2FA, then you have to add `-H "X-GitHub-OTP: CODE"` with your OTP code instead of `CODE` to `curl`) 
 
     read -p "GitHub username: " GHUSER
     curl https://api.github.com/repos/criztovyl/studienplan5/forks -d '{}' -u $GHUSER
@@ -147,13 +187,15 @@ For the lazy ones:
     git rebase origin/develop
     git push
 
+Inspired by [git flow](http://nvie.com/posts/a-successful-git-branching-model/), [git rebase](https://randyfay.com/node/91) and [GitHub](https://guides.github.com/introduction/flow/) workflows.
+
 ## Author
 
 Christoph "criztovyl" Schulz
 
  - [GitHub](https://github.com/criztovyl)
  - [Blog](https://criztovyl.joinout.de)
- - [Twitter @criztovyl](https://twitter.com/criztovyl)
+ - [Twitter](https://twitter.com/criztovyl)
 
 ## License
 GPLv3 and later.
