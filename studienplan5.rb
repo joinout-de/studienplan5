@@ -205,7 +205,8 @@ if File.exists? extr_config_file
     end
 
 else
-    $logger.warn "Missing config file!"
+    $logger.info "Missing config file!"
+    $logger.warn "Neither a config file nor options! See --help." if ARGV.length == 0
 end
 
 # unified: :only_self, :no_self, nil
