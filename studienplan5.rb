@@ -54,6 +54,8 @@ extr_config_file = "extr_config.yml"
 $options = {
     extr_cfg: true,
     all_ics: false,
+    load_events: true,
+    unified: true,
 }
 
 # Data from extractors
@@ -97,8 +99,8 @@ OptionParser.new do |opts|
         $options[:cal_dir] = cal_dir
     end
 
-    opts.on("-u", "--disable-unified", "Do not create files that contain all parent events recursively.") do |u|
-        $options[:no_unified] = u
+    opts.on("-u", "--[no-]unified", "Do (not) create files that contain all parent events recursively. Default: Create.") do |u|
+        $options[:unified] = u
     end
 
     opts.on("-s", "--simulate", "Simulate, do not write files or create directories.") do |simulate|
@@ -109,12 +111,12 @@ OptionParser.new do |opts|
         $options[:quiet] = quiet
     end
 
-    opts.on("-l", "--level [LEVEL]", {fatal: Logger::FATAL, error: Logger::ERROR, warn: Logger::WARN, info: Logger::INFO, debug: Logger::DEBUG}, "Log level") do |level|
+    opts.on("-l", "--level [LEVEL]", {fatal: Logger::FATAL, error: Logger::ERROR, warn: Logger::WARN, info: Logger::INFO, debug: Logger::DEBUG}, "Log level (fatal, error, warn, info, debug)") do |level|
         $logger.level = level
     end
 
-    opts.on("--disable-load-events", "Disable loading of data.json in -w/--web page") do |no_events|
-        $options[:no_events] = true
+    opts.on("--[no-]load-events", "Set the flag (not) to load data.json. Flag is in classes.json. Default: Set/Load.") do |load_events|
+        $options[:load_events] = load_events
     end
 
     opts.on("--[no-]extr-config", "Do (not) read extr_helper.yml. Default: Read.") do |extr_cfg|
@@ -267,7 +269,7 @@ if data
 
         tz=TZInfo::Timezone.get "Europe/Berlin"
         cal_stub = Icalendar::Calendar.new
-        no_unified = $options[:no_unified] ? :only_self : nil
+        unified = $options[:unified] ? nil : :only_self
 
         cal_stub.prodid = "-Christoph criztovyl Schulz//studienplan5 using icalendar-ruby//DE"
         cal_stub.add_timezone tz.ical_timezone(Time.now)
@@ -282,7 +284,7 @@ if data
             $logger.info "Would create #{icals_path}." if $options[:simulate]
         end
 
-        $logger.info "Writing unified calendars." unless no_unified
+        $logger.info "Writing unified calendars." unless unified
 
         $logger.info "Collecting events..."
 
@@ -342,7 +344,7 @@ if data
 
         end
 
-        unless no_unified
+        if $options[:unified]
 
             $logger.info "Including parent calendar events..."
 
@@ -380,7 +382,7 @@ if data
             $logger.debug "Class: #{clazz.inspect}"
 
             clazz_file = icals_path + File::SEPARATOR + StudienplanUtil.class_ical_name(clazz) + ".ical"
-            clazz_file.gsub!(/\.ical/, ".unified.ical") unless no_unified
+            clazz_file.gsub!(/\.ical/, ".unified.ical") if $options[:unified]
 
             $logger.info "Writing calendar file \"%s\"" % clazz_file
 
@@ -404,8 +406,8 @@ if data
             json_data_version: $data_version,
             generated: Time.now,
             ical_dir: ical_dir,
-            unified: $options[:no_unified] ? false : true,
-            load_events: $options[:no_events] ? false : true,
+            unified: $options[:unified],
+            load_events: $options[:load_events],
             data: {}
         }
         export = json_data[:data] # TODO Do we still require this as an extra variable?
