@@ -87,10 +87,6 @@ OptionParser.new do |opts|
         $options[:output] = o
     end
 
-    opts.on("-k", "--disable-json-object-keys", "Stringify keys that are not strings.") do |jok|
-        $options[:no_jok] = jok
-    end
-
     opts.on("-p", "--json-pretty", "Write pretty JSON data.") do |jp|
         $options[:json_pretty] = jp
     end
@@ -424,7 +420,7 @@ if data
             end
         end
 
-        json_data[:data] = StudienplanUtil.json_object_keys(export) unless $options[:no_jok]
+        json_data[:data] = StudienplanUtil.json_object_keys(export)
 
         $logger.debug "Writing JSON classes file \"%s\"" % classes_path
 
