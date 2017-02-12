@@ -135,7 +135,7 @@ OptionParser.new do |opts|
 
     opts.on("--ausbplan FILE", "Extract data from a JSONed PDF Ausbildungsplan. Use extr_helper for PDF -> JSON.") do |semplan|
         File.open(semplan, "rb") do |f|
-            data = data.merge Ausbildungsplan.new(f).extract
+            data = data.merge ExtractorAusbildungsplan.new(f).extract
         end
     end
 
