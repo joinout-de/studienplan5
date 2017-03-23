@@ -349,6 +349,11 @@ if data
 
                 $logger.debug "Parent events for #{clazz}"
 
+                unless clazz
+                    $logger.warn "Calendar without a clazz! Most likely something went wrong during extraction."
+                    next
+                end
+
                 parent = clazz
                 while parent = parent.parent
                     $logger.debug parent
@@ -377,6 +382,11 @@ if data
         calendars.each_pair do |clazz, cal|
 
             $logger.debug "Class: #{clazz.inspect}"
+
+            unless clazz
+                $logger.warn "Calendar without a clazz! Most likely something went wrong during extraction."
+                next
+            end
 
             clazz_file = icals_path + File::SEPARATOR + StudienplanUtil.class_ical_name(clazz) + ".ical"
             clazz_file.gsub!(/\.ical/, ".unified.ical") if $options[:unified]
