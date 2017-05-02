@@ -463,6 +463,7 @@ class SemesterplanExtractor
                                         if group =~ /(.+)-/
                                             wrong = $1
                                             @@logger.warn "Something in group that does not belog there: #{wrong.inspect}"
+                                            @@logger.debug "Context: #{text}"
                                             group.gsub!(wrong + "-", "")
                                             title += " " + wrong
                                             @@logger.debug title
@@ -604,7 +605,7 @@ class SemesterplanExtractor
                                         textElement.content = redo_queue.pop
                                         redo
                                     end
-                                elsif text =~ /(.*?) ?\[(.*)\]/ # Our general-purpose RegEx did not match. Try a RegEx for elems like "Studienpräsenz [24]". These are full-week events.
+                                elsif text =~ /(.*?) ?\[(.*)\]/ or text =~ /(.*?) ?\((.*)\)/ # Our general-purpose RegEx did not match. Try a RegEx for elems like "Studienpräsenz [24]". These are full-week events.
                                     @@logger.debug "Title #{$1.inspect} and Room #{$2.inspect} only. Comment #{comment.inspect}"
 
                                     # If we have another full-week-event, replace it.
