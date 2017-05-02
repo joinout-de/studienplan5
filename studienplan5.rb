@@ -290,7 +290,11 @@ if data
             clazz = elem[:class]
 
             $logger.debug "Class: #{clazz.inspect}"
-            $logger.debug "Elem: #{elem.inspect}" unless clazz
+
+            unless clazz
+                $logger.warn "Missing class!"
+                $logger.debug "Elem: #{elem.inspect}"
+            end
 
             calendars[clazz] = cal_stub.dup unless calendars[clazz]
 
