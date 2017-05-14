@@ -610,7 +610,7 @@ class SemesterplanExtractor
 
                                     # If we have another full-week-event, replace it.
                                     @data.elements.delete_if do |e|
-                                        e[:title] == elementType and e[:time] == start
+                                        e[:title] == elementType and e[:time] == start and e[:class] == clazz
                                     end
 
                                     @data.add_full_week($1, rowClass, $2, start, comment)
