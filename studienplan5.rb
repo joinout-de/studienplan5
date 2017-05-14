@@ -290,7 +290,13 @@ if data
             clazz = elem[:class]
 
             $logger.debug "Class: #{clazz.inspect}"
-            $logger.debug "Elem: #{elem.inspect}" unless clazz
+
+            unless clazz
+                $logger.warn "Missing class!"
+                $logger.debug "Elem: #{elem.inspect}"
+            end
+
+            $logger.error "Class is nil! #{elem.inspect}" unless clazz
 
             calendars[clazz] = cal_stub.dup unless calendars[clazz]
 
@@ -381,12 +387,12 @@ if data
 
         calendars.each_pair do |clazz, cal|
 
-            $logger.debug "Class: #{clazz.inspect}"
-
             unless clazz
                 $logger.warn "Calendar without a clazz! Most likely something went wrong during extraction."
                 next
             end
+
+            $logger.debug "Class: #{clazz.inspect}"
 
             clazz_file = icals_path + File::SEPARATOR + StudienplanUtil.class_ical_name(clazz) + ".ical"
             clazz_file.gsub!(/\.ical/, ".unified.ical") if $options[:unified]

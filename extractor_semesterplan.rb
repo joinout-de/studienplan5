@@ -321,7 +321,6 @@ class SemesterplanExtractor
                                 #                                           by ":" or ".") (opt)                   group(s) are opt
                                 # * TODO: Replace with days_RE_text.
 
-
                                 @@logger.debug "Text: #{text.inspect}" unless text.empty?
 
                                 if text =~ /(.*):\n(.*)/m
@@ -463,6 +462,7 @@ class SemesterplanExtractor
                                         if group =~ /(.+)-/
                                             wrong = $1
                                             @@logger.warn "Something in group that does not belog there: #{wrong.inspect}"
+                                            @@logger.debug "Context: #{text}"
                                             group.gsub!(wrong + "-", "")
                                             title += " " + wrong
                                             @@logger.debug title
@@ -475,7 +475,7 @@ class SemesterplanExtractor
 
                                             @@logger.debug "Klausur/Wahlpflicht #{title.inspect} #{group.inspect} (#{comment.inspect})" # #inspect to see non-printing chars (\r, \n)
 
-                                            room = nil
+                                            room = nil # Reset
 
                                             room_RE = / ?Raum (.*)/
                                             if ( comment =~ room_RE ) # Huh, are the parenthesis required?
@@ -587,7 +587,7 @@ class SemesterplanExtractor
                                             #                                                                         Something $2 with
                                             #                                                                         a lecturer $3
 
-                                            @data.push({title: $1||$2||$4, class: rowClass||rowJahrgangClazz, room: $5, time: pe_start, lect: (lect = lects[$3]) ? lect : $3})
+                                            @data.push({title: $1||$2||$4, class: rowClass||rowJahrgangClazz, room: $5||room, time: pe_start, lect: (lect = lects[$3]) ? lect : $3})
 
                                         else # Currently have no example for this in mind, sry. But it's not special. That's good, isn't it? (Found one: "Präs-WP BI2")
                                             @data.push({title: match7, class: rowClass||rowJahrgangClazz, time: pe_start})
@@ -595,7 +595,7 @@ class SemesterplanExtractor
 
                                         @data.extra[:classes].add(rowClass||rowJahrgangClazz)
 
-                                        @@logger.info "#{match7} with title #{match7}, class #{rowClass||rowJahrgangClazz}, time #{pe_start}."
+                                        @@logger.info "#{match7} with title #{match7}, class #{rowClass||rowJahrgangClazz}, time #{pe_start}, room #{$5||room}."
                                     end # We're done with the information.
 
                                     # The redo queue I mentioned.
@@ -604,18 +604,18 @@ class SemesterplanExtractor
                                         textElement.content = redo_queue.pop
                                         redo
                                     end
-                                elsif text =~ /(.*?) ?\[(.*)\]/ # Our general-purpose RegEx did not match. Try a RegEx for elems like "Studienpräsenz [24]". These are full-week events.
+                                elsif text =~ /(.*?) ?\[(.*)\]/ or text =~ /(.*?) ?\((.*)\)/ # Our general-purpose RegEx did not match. Try a RegEx for elems like "Studienpräsenz [24]". These are full-week events.
                                     @@logger.debug "Title #{$1.inspect} and Room #{$2.inspect} only. Comment #{comment.inspect}"
 
                                     # If we have another full-week-event, replace it.
                                     @data.elements.delete_if do |e|
-                                        e[:title] == elementType and e[:time] == start
+                                        e[:title] == elementType and e[:time] == start and e[:class] == clazz
                                     end
 
-                                    @data.add_full_week($1, rowClass, $2, start, comment)
+                                    @data.add_full_week($1, rowClass||rowJahrgangClazz, $2, start, comment)
 
                                 elsif not text.empty? # That's the worst case. Warn and simply add.
-                                    @@logger.warn "Fall-trough! #{text.inspect}"
+                                    @@logger.warn "Fall-through! #{text.inspect}"
                                     @data.add_full_week(text, rowClass||rowJahrgangClazz, nil, start)
 
                                 end
