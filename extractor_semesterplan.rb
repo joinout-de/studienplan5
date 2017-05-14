@@ -476,7 +476,7 @@ class SemesterplanExtractor
 
                                             @@logger.debug "Klausur/Wahlpflicht #{title.inspect} #{group.inspect} (#{comment.inspect})" # #inspect to see non-printing chars (\r, \n)
 
-                                            room = nil
+                                            room = nil # Reset
 
                                             room_RE = / ?Raum (.*)/
                                             if ( comment =~ room_RE ) # Huh, are the parenthesis required?
@@ -588,7 +588,7 @@ class SemesterplanExtractor
                                             #                                                                         Something $2 with
                                             #                                                                         a lecturer $3
 
-                                            @data.push({title: $1||$2||$4, class: rowClass||rowJahrgangClazz, room: $5, time: pe_start, lect: (lect = lects[$3]) ? lect : $3})
+                                            @data.push({title: $1||$2||$4, class: rowClass||rowJahrgangClazz, room: $5||room, time: pe_start, lect: (lect = lects[$3]) ? lect : $3})
 
                                         else # Currently have no example for this in mind, sry. But it's not special. That's good, isn't it? (Found one: "Präs-WP BI2")
                                             @data.push({title: match7, class: rowClass||rowJahrgangClazz, time: pe_start})
@@ -596,7 +596,7 @@ class SemesterplanExtractor
 
                                         @data.extra[:classes].add(rowClass||rowJahrgangClazz)
 
-                                        @@logger.info "#{match7} with title #{match7}, class #{rowClass||rowJahrgangClazz}, time #{pe_start}."
+                                        @@logger.info "#{match7} with title #{match7}, class #{rowClass||rowJahrgangClazz}, time #{pe_start}, room #{$5||room}."
                                     end # We're done with the information.
 
                                     # The redo queue I mentioned.
