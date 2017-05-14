@@ -42,6 +42,8 @@ With [Bundler](https://bundler.io/):
 
 Use `extr_helper.sh`:
 
+To use PDF extraction dowload the tabula `...-jar-with-dependencies.jar` and set `EXTR_HELPER_TABULA_JAR` to the JAR's file path.
+
     Usage: ./extr_helper.sh extractor file [force|overwrite|reparse]
 
     Copies the file to it's corresponding directory in data/src, with unique prefix
