@@ -613,7 +613,7 @@ class SemesterplanExtractor
                                         e[:title] == elementType and e[:time] == start and e[:class] == clazz
                                     end
 
-                                    @data.add_full_week($1, rowClass, $2, start, comment)
+                                    @data.add_full_week($1, rowClass||rowJahrgangClazz, $2, start, comment)
 
                                 elsif not text.empty? # That's the worst case. Warn and simply add.
                                     @@logger.warn "Fall-trough! #{text.inspect}"
