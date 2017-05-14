@@ -321,7 +321,6 @@ class SemesterplanExtractor
                                 #                                           by ":" or ".") (opt)                   group(s) are opt
                                 # * TODO: Replace with days_RE_text.
 
-
                                 @@logger.debug "Text: #{text.inspect}" unless text.empty?
 
                                 if text =~ /(.*):\n(.*)/m
@@ -616,7 +615,7 @@ class SemesterplanExtractor
                                     @data.add_full_week($1, rowClass||rowJahrgangClazz, $2, start, comment)
 
                                 elsif not text.empty? # That's the worst case. Warn and simply add.
-                                    @@logger.warn "Fall-trough! #{text.inspect}"
+                                    @@logger.warn "Fall-through! #{text.inspect}"
                                     @data.add_full_week(text, rowClass||rowJahrgangClazz, nil, start)
 
                                 end
