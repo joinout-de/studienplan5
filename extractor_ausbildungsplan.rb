@@ -4,8 +4,11 @@ require_relative "structs"
 
 class ExtractorAusbildungsplan
 
+    # Die extrahierten Daten.
     attr_reader :data
 
+    # Extractor für JSON der Ausbildungsplan Excel-PDF.
+    # (.xls mit Tabula zu .json)
     def initialize(file)
 
         @logger = $logger && $logger.dup || Logger.new(STDERR)
@@ -16,6 +19,13 @@ class ExtractorAusbildungsplan
         @data = Plan.new "Ausbildungsplan"
     end
 
+    #
+    # Daten extrahieren.
+    #
+    # <em>$TABULA_VERSION</em> beeinflusst welche Tabula-Version ausgewählt wird.
+    #
+    # - 1.0 (Standard)
+    # - 0.9
     def extract()
 
         # line-breaks are saved as \r, remove them and the word-breaks. (And spaces...)
@@ -28,7 +38,7 @@ class ExtractorAusbildungsplan
         end
     end
 
-    # Extract using Tabula 1.0 data format
+    # Daten aus Tabula-1.0-Datenformat extrahieren.
     def extract10(inhalt)
 
         @logger.info "Using Tabula 1.0 data format"
@@ -140,7 +150,7 @@ class ExtractorAusbildungsplan
         @data
     end
 
-    # Extract using Tabula 0.9 data format
+    # Daten aus Tabula-0.9-Datenformat extrahieren.
     def extract09(inhalt)
 
         @logger.info "Using Tabula 0.9 data format"
@@ -186,6 +196,14 @@ class ExtractorAusbildungsplan
         @data
     end
 
+    ##
+    # Löst heuristsisch den Titel einer Veranstaltung auf.
+    #
+    # Ggf. verändert sich das Kommentar der Veranstaltung,
+    # die Änderung wird vor das gegebene Kommentar gehängt.
+    #
+    # [taetigkeit] Titel
+    # [comment] Kommentar
     def resolveTaetigkeit(taetigkeit, comment)
 
         base_comment = ""
@@ -209,7 +227,19 @@ class ExtractorAusbildungsplan
 
     end
 
+    ##
+    # Löst den Namen einer Klasse aus gegebener Zelle
+    # anhand gegebenem regulären Ausdruck auf.
+    #
+    # RegEx-Gruppen:
+    # 0. klasse
+    # 0. ausbjahr
+    # 0. company
+    #
+    # [inhalt] Zelle
+    # [regex] regulärer Ausdruck
     def resolveClazz(inhalt, regex)
+
         inhalt.match(regex)
 
         klasse = @data.extra[:class] = Clazz.from_clazz($1)
