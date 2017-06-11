@@ -17,15 +17,19 @@ class ExtractorAusbildungsplan
     end
 
     def extract()
+
+        # line-breaks are saved as \r, remove them and the word-breaks. (And spaces...)
+        inhalt = JSON.parse(@file.readlines.join(?\n).gsub("\\r", " ").gsub(/- (\w)/, "\\1").gsub(/ +/, " "))
+
         case $TABULA_VERSION
-        when "0.9" then extract09
-        when "1.0" then extract10
-        else extract10
+        when "0.9" then extract09(inhalt)
+        when "1.0" then extract10(inhalt)
+        else extract10(inhalt)
         end
     end
 
     # Extract using Tabula 1.0 data format
-    def extract10()
+    def extract10(inhalt)
 
         @logger.info "Using Tabula 1.0 data format"
 
@@ -57,9 +61,6 @@ class ExtractorAusbildungsplan
         #    ...
         # }
         #
-
-        # line-breaks are saved as \r, remove them and the word-breaks. (And spaces...)
-        inhalt = JSON.parse(@file.readlines.join(?\n).gsub("\\r", " ").gsub(/- (\w)/, "\\1").gsub(/ +/, " "))
 
         klasse = nil
         resolveClazz(inhalt.shift["data"][0][1]["text"], /Klasse (..\d{3})Ausbildungsplan (\d{4} \/ \d{4})(.*)/) {|k| klasse = k }
@@ -140,7 +141,7 @@ class ExtractorAusbildungsplan
     end
 
     # Extract using Tabula 0.9 data format
-    def extract09()
+    def extract09(inhalt)
 
         @logger.info "Using Tabula 0.9 data format"
 
@@ -149,8 +150,6 @@ class ExtractorAusbildungsplan
         comment=""
         taetigkeit=""
         klasse = nil
-
-        inhalt = JSON.parse(@file.readlines.join(?\n).gsub("\\r", " ").gsub(/- (\w)/, "\\1").gsub(/ +/, " "))
 
         resolveClazz(inhalt.shift[0]["text"], /Klasse (..\d{3}) Ausbildungsplan (\d{4} ?\/ \d{4}) (.*)/) {|k| klasse = k }
 
