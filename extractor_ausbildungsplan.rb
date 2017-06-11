@@ -197,12 +197,15 @@ class ExtractorAusbildungsplan
 
         base_comment = ""
         taetigkeit = case taetigkeit
-                     when /^Studienpräsenzwochen?$/ then "Studienpräsenz"
-                     when /^Betriebliche Praxis (\d+)$/
-                         base_comment += "Nr: #$1"
+                     when /^(STPR|Studienpräsenzwochen)(.*)$/
+                         base_comment += $2.strip
+                         "Studienpräsenz"
+                     when /^Betriebliche Praxis (Block )?(\d+)(.*)$/
+                         base_comment += "Nr: #$2"
+                         base_comment += ", #{$3.strip}" unless $3.empty?
                          "Praxis"
-                     when /^ATIW Block (\d+)$/
-                         base_comment += "Nr: #$1"
+                     when /^ATIW (- )?Block (\d+)$/
+                         base_comment += "Nr: #$2"
                          "ATIW"
                      else taetigkeit
                      end
