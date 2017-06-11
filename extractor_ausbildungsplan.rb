@@ -7,6 +7,11 @@ class ExtractorAusbildungsplan
     attr_reader :data
 
     def initialize(file)
+
+        @logger = $logger && $logger.dup || Logger.new(STDERR)
+        @logger.level = $logger && $logger.level || Logger::INFO
+        @logger.progname = "AusbPlan"
+
         @file = file
         @data = Plan.new "Ausbildungsplan"
     end
@@ -22,7 +27,7 @@ class ExtractorAusbildungsplan
     # Extract using Tabula 1.0 data format
     def extract10()
 
-        puts "Using Tabula 1.0 data format"
+        @logger.info "Using Tabula 1.0 data format"
 
         #
         # Tabula 1.0 data looks like this:
@@ -62,10 +67,8 @@ class ExtractorAusbildungsplan
         ausbjahr = @data.extra[:ausbjahr] = $2
         company = @data.extra[:company] = $3
 
-        puts "Parsing for:"
-        puts [klasse, ausbjahr, company].map(&:inspect)
-        puts "---"
-        puts
+        @logger.info { "Parsing for class %s, ausbjahr %s, company %s" % [klasse, ausbjahr, company].map(&:inspect) }
+        @logger.debug "---"
 
         for zeilenNr in (1...inhalt.length).step(2)
             zeile = inhalt[zeilenNr]["data"]
@@ -94,13 +97,12 @@ class ExtractorAusbildungsplan
                 u = u + va_count
                 base_comment = ""
 
+                @logger.debug { "%07.3f of %07.3f => %02d..%02d (%02dx) %s" % [ va["width"].to_f.round(3), cellWidth.round(3), c, u, va_count, taetigkeit.inspect] }
+
                 resolveTaetigkeit(taetigkeit, base_comment) {|t, cm| taetigkeit = t; base_comment = cm; }
 
-                puts "Tätigkeit"
-                puts "%s..%s: %s" % [c, u, taetigkeit].map(&:inspect)
-                puts "base_comment"
-                puts base_comment.inspect
-                puts
+                @logger.debug "Resolved %p" % taetigkeit
+                @logger.debug "base_comment: #{base_comment.inspect}"
 
                 for metaCellNr in c..u
 
@@ -114,10 +116,10 @@ class ExtractorAusbildungsplan
 
                     timeStr = "1 #{woche} 20#{zeitraum[-2,2]}";
 
-                    puts "woche, zeitraum, comment, timeStr:", [woche, zeitraum, comment, timeStr].map(&:inspect)
+                    @logger.debug  { "timeS %s, cm %s" % [timeStr, comment].map(&:inspect) }
 
                     if woche.empty?
-                        puts "Week empty, skipping."
+                        @logger.debug "Week empty, skipping."
                         next
                     end
 
@@ -130,16 +132,12 @@ class ExtractorAusbildungsplan
                     })
 
                     c += 1
-
-                    puts @data.elements[-1]
-
-                    puts "----"
                 end # metaCellNr
 
-                puts "---"
+                @logger.debug "--- Cell end."
             end # zeile[3].each
 
-            puts "--"
+            @logger.debug "-- Row end."
         end # zeilenNr
 
         @data
@@ -148,7 +146,7 @@ class ExtractorAusbildungsplan
     # Extract using Tabula 0.9 data format
     def extract09()
 
-        puts "Using Tabula 0.9 data format"
+        @logger.info "Using Tabula 0.9 data format"
 
         woche=""
         zeitraum=""
