@@ -61,13 +61,9 @@ class ExtractorAusbildungsplan
         # line-breaks are saved as \r, remove them and the word-breaks. (And spaces...)
         inhalt = JSON.parse(@file.readlines.join(?\n).gsub("\\r", " ").gsub(/- (\w)/, "\\1").gsub(/ +/, " "))
 
-        inhalt.shift["data"][0][1]["text"].match(/Klasse (..\d{3})Ausbildungsplan (\d{4} \/ \d{4})(.*)/)
+        klasse = nil
+        resolveClazz(inhalt.shift["data"][0][1]["text"], /Klasse (..\d{3})Ausbildungsplan (\d{4} \/ \d{4})(.*)/) {|k| klasse = k }
 
-        klasse = @data.extra[:class] = Clazz.from_clazz($1)
-        ausbjahr = @data.extra[:ausbjahr] = $2
-        company = @data.extra[:company] = $3
-
-        @logger.info { "Parsing for class %s, ausbjahr %s, company %s" % [klasse, ausbjahr, company].map(&:inspect) }
         @logger.debug "---"
 
         for zeilenNr in (1...inhalt.length).step(2)
@@ -152,11 +148,11 @@ class ExtractorAusbildungsplan
         zeitraum=""
         comment=""
         taetigkeit=""
-        klasse = Clazz.new("FS151","BSc","FST","ABB2015")
+        klasse = nil
 
         inhalt = JSON.parse(@file.readlines.join(?\n).gsub("\\r", " ").gsub(/- (\w)/, "\\1").gsub(/ +/, " "))
 
-        inhalt.shift
+        resolveClazz(inhalt.shift[0]["text"], /Klasse (..\d{3}) Ausbildungsplan (\d{4} ?\/ \d{4}) (.*)/) {|k| klasse = k }
 
         for zeile in 0..4
             for spalte in 0..10
@@ -212,6 +208,18 @@ class ExtractorAusbildungsplan
 
         yield taetigkeit, comment
 
+    end
+
+    def resolveClazz(inhalt, regex)
+        inhalt.match(regex)
+
+        klasse = @data.extra[:class] = Clazz.from_clazz($1)
+        ausbjahr = @data.extra[:ausbjahr] = $2
+        company = @data.extra[:company] = $3
+
+        @logger.info { "Parsing for class %s, ausbjahr %s, company %s" % [klasse, ausbjahr, company].map(&:inspect) }
+
+        yield klasse, ausbjahr, company
     end
 
 end
