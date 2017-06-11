@@ -49,18 +49,9 @@ class ExtractorAusbildungsplan
                     taetigkeit = inhalt[zx4+3][spalte]["text"]
                 end
 
-                taetigkeit = case taetigkeit
-                             when /^Studienpräsenzwochen?$/ then "Studienpräsenz"
-                             when /^Betriebliche Praxis (\d+)$/
-                                 comment += (comment.empty? ? "" : " ") + "Nr: #$1"
-                                 "Praxis"
-                             when /^ATIW Block (\d+)$/
-                                 comment += (comment.empty? ? "" : " ") + "Nr: #$1"
-                                 "ATIW"
-                             else taetigkeit
-                             end
-
                 next if woche.empty?
+
+                resolveTaetigkeit(taetigkeit, comment) {|t,c| taetigkeit = t; comment = c }
 
                 @data.push({
                     title: taetigkeit,
@@ -73,6 +64,26 @@ class ExtractorAusbildungsplan
         end
 
         @data
+    end
+
+    def resolveTaetigkeit(taetigkeit, comment)
+
+        base_comment = ""
+        taetigkeit = case taetigkeit
+                     when /^Studienpräsenzwochen?$/ then "Studienpräsenz"
+                     when /^Betriebliche Praxis (\d+)$/
+                         base_comment += "Nr: #$1"
+                         "Praxis"
+                     when /^ATIW Block (\d+)$/
+                         base_comment += "Nr: #$1"
+                         "ATIW"
+                     else taetigkeit
+                     end
+
+        comment = base_comment + ( base_comment.empty? || comment.empty? ? "" : ", " ) + comment
+
+        yield taetigkeit, comment
+
     end
 
 end
