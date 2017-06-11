@@ -94,6 +94,32 @@ Clazz = Struct.new(:name, :course, :cert, :jahrgang, :group) do
         jahrgang + full_name + course + cert
     end
 
+    def self.from_clazz(clazz)
+
+        # e.g. FS151
+
+        # it's somewhat redundant, but model requires it. (for now)
+        name = clazz
+
+        # Cannot determine course from class name only.
+        # course = ""
+
+        cert = case clazz[1]
+               when "I" then "FIS"
+               when "S" then "FST"
+               when "V" then "FBV"
+               end
+
+        # Assuming it's ABB, afaik there are no classes for BBB.
+        # If anybody ever needs to change 20 to 30: I hope mankind is still there.
+        jahrgang = "ABB20#{clazz[2,2]}"
+
+        # Cannot know group, it's an external factor
+        # group = nil
+
+        self.new(name, "", cert, jahrgang) # group would be 5th param, but it's nil, so we can skip it.
+    end
+
     def full_name
         format(self.group, format(self.name, "%s-%%s"), format(self.name, "%s", nil))
         #self.group ? self.name.to_s + "-" + self.group.to_s : self.name.to_s
