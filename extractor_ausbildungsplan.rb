@@ -12,6 +12,16 @@ class ExtractorAusbildungsplan
     end
 
     def extract()
+        case $TABULA_VERSION
+        when "0.9" then extract09
+        else extract09
+        end
+    end
+
+    # Extract using Tabula 0.9 data format
+    def extract09()
+
+        puts "Using Tabula 0.9 data format"
 
         woche=""
         zeitraum=""
@@ -61,6 +71,7 @@ class ExtractorAusbildungsplan
                 })
             end
         end
+
         @data
     end
 

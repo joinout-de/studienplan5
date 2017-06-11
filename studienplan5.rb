@@ -123,6 +123,8 @@ OptionParser.new do |opts|
         $options[:all_ics] = all_ics;
     end
 
+    opts.on("--tabula VERSION", "Set the tabula data version. Currently: 0.9 (default)") {|ver| $TABULA_VERSION=ver }
+
     # Extractors
     # TODO: Move extr_helper-code here (studienplan5) or to extractors. Maybe management here, converting in extractors.
     #
