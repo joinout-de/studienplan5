@@ -314,11 +314,12 @@ if data
 
         $logger.info "Collecting events..."
 
+
         data.elements.each do |elem|
 
             clazz = elem[:class]
 
-            $logger.debug "Class: #{clazz.inspect}"
+            $logger.debug "Class: #{clazz}"
 
             unless clazz
                 $logger.warn "Missing class!"
@@ -391,7 +392,7 @@ if data
 
                 parent = clazz
                 while parent = parent.parent
-                    $logger.debug parent
+                    $logger.debug "#{parent}"
                     calendars[parent].events.each do |evt| calendars[clazz].add_event evt end if calendars[parent]
                 end
             end
@@ -421,7 +422,7 @@ if data
                 next
             end
 
-            $logger.debug "Class: #{clazz.inspect}"
+            $logger.debug "Class: #{clazz}"
 
             clazz_file = icals_path + File::SEPARATOR + StudienplanUtil.class_ical_name(clazz) + ".ical"
             clazz_file.gsub!(/\.ical/, ".unified.ical") if $options[:unified]
