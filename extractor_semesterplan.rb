@@ -242,7 +242,7 @@ class SemesterplanExtractor
                     rowJahrgang = ( rowHeader = rowPart[0]) ? rowHeader["bgcolor"] : ""
                     rowJahrgang = ( colorKey = jahrgangsColorKeys[j] ) ? colorKey[rowJahrgang] : ""
 
-                    rowJahrgangClazz = Clazz::Jahrgang(rowJahrgang)
+                    rowJahrgangClazz = Clazz.new().with_year(rowJahrgang[-4,4].to_i) # 2015 of "ABB2015"
 
                     rowClass = nil
 
@@ -286,24 +286,15 @@ class SemesterplanExtractor
 
                             text = textElement.text.strip # Guess who used #to_s instead of #text and wondered why there where HTML entities everywhere.
 
-                            #           Name                  Certificate
-                            #           vvvvvvvvvvvv          vvvvv
-                            if text =~ /(\w{2}\d{3})\+(\w+) \((\w+)\) (\w)/ # i.e. FS151+BSc (FST) d; (class), as mentioned above
-                                #                     ^^^^^           ^^^^
-                                #                     Course          Group
+                            if text =~ /\w{2}\d{3}\+\w+ \(\w+\) \w/ # i.e. FS151+BSc (FST) d; (class), as mentioned above
 
-                                name = $1
-                                course = $2  # Studiengang (BSc, BA)
-                                cert = $3 # Zertifizierung (FST, FIS, ...)
-                                group = $4
-
-                                rowClass = Clazz.new(name, course, cert, rowJahrgang)
+                                rowClass = Clazz::from_full_name(text)
 
                                 @data.extra[:classes].add rowClass
 
                                 unless groups[rowJahrgang]; groups.store(rowJahrgang, {}); end
-                                unless groups[rowJahrgang][group]; groups[rowJahrgang].store group, Set.new; end
-                                groups[rowJahrgang][group].add rowClass
+                                unless groups[rowJahrgang][rowClass.group]; groups[rowJahrgang].store rowClass.group, Set.new; end
+                                groups[rowJahrgang][rowClass.group].add rowClass
 
                                 @@logger.debug "Class: #{rowClass}"
 
@@ -518,8 +509,7 @@ class SemesterplanExtractor
 
                                                 courses.each do |course_name|
 
-                                                    clazz = rowJahrgangClazz.dup
-                                                    clazz.course = course_name
+                                                    clazz = rowJahrgangClazz.with_course(course_name)
 
                                                     @@logger.debug "Clazz: #{clazz}, Comment: #{comment.inspect}"
 
@@ -557,8 +547,7 @@ class SemesterplanExtractor
                                                         classes.each do |groupclazz|
 
                                                             unless groupclazz.nil? or grp[1].nil? or grp[1].empty?
-                                                                groupclazz = groupclazz.dup
-                                                                groupclazz.group = grp[1]
+                                                                groupclazz = groupclazz.with_part grp[1]
                                                             end
 
                                                             # TODO Why there's a nil check but below we use groupclazz even if it's nil? Huh?

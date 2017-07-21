@@ -52,10 +52,16 @@ module StudienplanUtil
     end
 
     def class_ical_name(clazz)
-        name = clazz.jahrgang;
-        name += "-" + clazz.full_name if clazz.full_name
+        name = "ABB" + clazz.year.to_s
+
+        if clazz.cert and clazz.number
+            name += "-#{clazz.short_name}"
+            name += "-#{clazz.part}" if clazz.part
+        end
+
         name += "-" + clazz.course if clazz.course
-        name += "-" + clazz.cert if clazz.cert
+        name += "-" + clazz.expand_cert if clazz.cert
+
         name
     end
 
