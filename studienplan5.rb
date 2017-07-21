@@ -56,12 +56,13 @@ $options = {
     all_ics: false,
     load_events: true,
     unified: true,
+    rc: true,
 }
 
 # Data from extractors
 data = Plan.new "Studienplan5"
 
-OptionParser.new do |opts|
+optionParser = OptionParser.new do |opts|
 
     opts.banner = "Usage: %s [options]" % $0
     opts.separator ""
@@ -119,6 +120,10 @@ OptionParser.new do |opts|
         $options[:extr_cfg] = extr_cfg
     end
 
+    opts.on("--[no-]rc", "Do (not) load options/arguments from ./studienplan_rc. One argument/option per line. Lines starting with # are ignored. Default: Read.") do |rc|
+        $options[:rc] = rc
+    end
+
     opts.on("--[no-]all-ics", "Do (not) write an ICS file containing all events. Default: Do not write.") do |all_ics|
         $options[:all_ics] = all_ics;
     end
@@ -149,7 +154,13 @@ OptionParser.new do |opts|
         exit
     end
 
-end.parse!
+end
+
+optionParser.parse!
+
+if $options[:rc]
+    File.open('studienplan_rc', 'rb'){|f| optionParser.parse(f.readlines.select{|l| !l.start_with?(?#) }.join.split(?\n)) }
+end
 
 if $options[:cal_dir]
     ical_dir = $options[:cal_dir]
