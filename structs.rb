@@ -102,7 +102,7 @@ Clazz = Struct.new(:name, :course, :cert, :jahrgang, :group) do
         name = clazz
 
         # Cannot determine course from class name only.
-        # course = ""
+        # course = nil
 
         cert = case clazz[1]
                when "I" then "FIS"
@@ -117,7 +117,7 @@ Clazz = Struct.new(:name, :course, :cert, :jahrgang, :group) do
         # Cannot know group, it's an external factor
         # group = nil
 
-        self.new(name, "", cert, jahrgang) # group would be 5th param, but it's nil, so we can skip it.
+        self.new(name, nil, cert, jahrgang) # group would be 5th param, but it's nil, so we can skip it.
     end
 
     def full_name
