@@ -247,8 +247,24 @@ if data
     $logger.debug "We have data."
     $logger.debug $options.inspect
 
+    $logger.debug "Collected, extending classes: "
+    data.extra[:classes].select{|c| !c.cert.nil? }.each{|c| $logger.debug "#{c.full_name} (#{c.cert.nil? ? "?????" : c.short_name})" }
+
+    # hash for extending "short named" classes
+    ext_classes = {}
+    data.extra[:classes].select{|c| !c.cert.nil? }.each{|c| ext_classes[c.short_name] = c }
+
     $logger.debug "Remove duplicates..."
-    data.elements.uniq! {|e| [e[:time], e[:title], e[:class], e[:special]] }
+    data.elements.uniq! do |e|
+
+        clazz = e[:class]
+        if clazz.short_named? and ext_class = ext_classes[clazz.short_name]
+            $logger.debug "Extending #{clazz} using #{ext_class}"
+            e[:class] = ext_class
+        end
+
+        [e[:time], e[:title], e[:class], e[:special]]
+    end
 
     if $options[:json]
 
