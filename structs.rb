@@ -77,81 +77,296 @@ class Plan
 
 end
 
-# This is the Struct for storing class information
-Clazz = Struct.new(:name, :course, :cert, :jahrgang, :group) do
+##
+# A Class.
+#
+# Four kinds of classes: Year &rarr; Course (Degree) &rarr; Group &rarr; Class &rarr -> Class Part. (Year has courses, courses have groups, ...)
+#
+# The class has an assigned _certification_ (apprenticeship) and a _number_.
+#
+# Year, certification and class number can be determined from <em>short name</em>, for the course the <em>full name</em> is needed.
+#
+# == Names
+#
+# [short name] +CCYYN+
+# [full name] <code>CCYYN+D (CCC) G</code>
+#
+# === Codes
+#
+# CC:: Certfication 2-char-code (afaik only +FI+, +FS+, +FV+)
+# YY:: Year 20xx
+# N:: Class number (unique for certification)
+# D:: Course (degree)
+# G:: Group
+# CCC:: Certfication 3-char-code (FBV, FIS, FST)
+#
+class Clazz
 
-    def self.Jahrgang(name)
-        return self.new(nil, nil, nil, name)
+    # Compatibility
+    JSON_VERSION = 2
+
+    # Class' four-digit start year
+    #
+    # +2015+, +2016+, ...
+    attr_reader :year
+
+    # Class course
+    #
+    # +BA+, +BSc+
+    attr_reader :course
+
+    # Class' group
+    #
+    # +a+, +b+, +c+, ...
+    attr_reader :group
+
+    # Class' certification, two-char-code:
+    #
+    # +FI+ or +FS+, +FV+
+    attr_reader :cert
+
+    # Class' number
+    #
+    # +1+, +2+, +3+, ...
+    attr_reader :number
+
+    # Class' part
+    #
+    # +1+, +2+, +3+, ...
+    attr_reader :part
+
+    ##
+    # Create a new class.
+    #
+    def initialize(year=nil, course=nil, group=nil, cert=nil, number=nil, part=nil)
+
+        @year = year
+        @course = course
+        @group = group
+        @cert = cert
+        @number = number
+        @part = part
+
+        self
+
     end
 
-    def to_s
-
-        jahrgang = format(self.jahrgang, "Jahrgang %s")
-        full_name = format(self.full_name, ", %s")
-        course = format(self.course,  ", Course %s")
-        cert = format(self.cert, ", Cert. %s")
-
-        jahrgang + full_name + course + cert
+    def with_year!(year)
+        @year = year
+        self
     end
 
-    def self.from_clazz(clazz)
-
-        # e.g. FS151
-
-        # it's somewhat redundant, but model requires it. (for now)
-        name = clazz
-
-        # Cannot determine course from class name only.
-        # course = nil
-
-        cert = case clazz[1]
-               when "I" then "FIS"
-               when "S" then "FST"
-               when "V" then "FBV"
-               end
-
-        # Assuming it's ABB, afaik there are no classes for BBB.
-        # If anybody ever needs to change 20 to 30: I hope mankind is still there.
-        jahrgang = "ABB20#{clazz[2,2]}"
-
-        # Cannot know group, it's an external factor
-        # group = nil
-
-        self.new(name, nil, cert, jahrgang) # group would be 5th param, but it's nil, so we can skip it.
+    def with_year(year)
+        self.dup.with_year! year
     end
 
-    def full_name
-        format(self.group, format(self.name, "%s-%%s"), format(self.name, "%s", nil))
-        #self.group ? self.name.to_s + "-" + self.group.to_s : self.name.to_s
+    def with_course!(course)
+        @course = course
+        self
     end
 
-    def full_jahrgang
-        format(self.course, format(self.jahrgang, "%s(%%s)"), format(self.jahrgang))
-        #self.course ? self.jahrgang.to_s + "(" + self.course.to_s + ")" : self.jahrgang
+    def with_course(course)
+        self.dup.with_course! course
     end
 
-    def simple
-        self.name ? "%s(%s)" % [self.full_name, self.full_jahrgang] : "#{self.full_jahrgang}"
+    def with_group!(group)
+        @group = group
+        self
     end
 
-    def format(str, format="%s", empty="", opts=[])
-        StudienplanUtil.format_non_empty(str, format, empty, opts)
+    def with_group(group)
+        self.dup.with_group! group
     end
 
-    def parent
-        # Jahrgang > Course > Cert > Name > Group
-        ret = self.dup
-        if self.group
-            ret.group = nil
-        elsif self.name
-            ret.name = nil
-        elsif self.cert
-            ret.cert = nil
-        elsif self.course
-            ret.course = nil
-        elsif self.jahrgang
-            ret = nil
+    def with_cert!(cert)
+        @cert = cert
+        self
+    end
+
+    def with_cert(cert)
+        self.dup.with_cert! cert
+    end
+
+    def with_number!(number)
+        @number = number
+        self
+    end
+
+    def with_number(number)
+        self.dup.with_number! number
+    end
+
+    def with_part!(part)
+        @part = part
+        self
+
+    end
+
+    def with_part(part)
+        self.dup.with_part! part
+    end
+
+
+    def with_number_and_cert!(number, cert)
+        @number = number
+        @cert = cert
+        self
+    end
+
+    def with_number_and_cert(number, cert)
+        self.dup.with_number_and_cert! number, cert
+    end
+
+    def parent!()
+
+        # Part > Class > Group > Course > Year
+
+        if !@part.nil?
+            @part = nil
+
+        elsif !@number.nil?
+            @number = nil
+
+        elsif !@cert.nil?
+            @cert = nil
+
+        elsif !@group.nil?
+            @group = nil
+
+        elsif !@course.nil?
+            @course = nil
+
+        else
+            return nil
+
         end
-        ret
+
+        self
+
     end
+
+    def parent()
+        self.dup.parent!
+    end
+
+    def short_name()
+        "%s%s%s" % [@cert.nil? ? "??" : @cert, @year.nil? ? "??" : @year-2000, @number.nil? ? "?" : @number]
+    end
+
+    def full_name()
+        "%s+%-3s (%s) %s%s" %
+            [self.short_name, @course.nil? ? "???": @course, @cert.nil? ? "???" : self.expand_cert, @group.nil? ? "?" : @group, @part.nil? ? "?" : @part]
+    end
+
+    def short_named?()
+        !@year.nil? and @course.nil? and @group.nil? and !@cert.nil?  and !@number.nil? and @part.nil?
+    end
+
+    def extends?(other)
+        !self.short_named && other.short_named && self.short_name == other.short_name
+    end
+
+    alias simple full_name
+
+    ##
+    # New class from <em>short name</em>. See Clazz.
+    def self.from_short_name(short_name)
+
+        # CCYYN
+        #              $1 cert       $3 num
+        #              vvvvvvv       vvvv
+        short_name =~ /(\w{2})(\d{2})(\d)/
+        #                     ^^^^^^^
+        #                     $2 year
+
+        #                          course
+        self.new ("20" + $2).to_i, nil, nil, $1, $3
+        #                               group
+    end
+
+    def expand_cert()
+
+        return "???" unless @cert
+
+        case @cert[1]
+        when "I" then "FIS"
+        when "S" then "FST"
+        when "V" then "FBV"
+        end
+    end
+
+    ##
+    # New class from <em>full name</em>. See Clazz.
+    def self.from_full_name(full_name)
+
+        # CCYYN+D (CCC) G
+        #             $1 cert       $3 num              $5 group
+        #             vvvvvvv       vvvv                vvvvv
+        full_name =~ /(\w{2})(\d{2})(\d)\+(\w+) \(\w+\) (\w+)/
+        #                    ^^^^^^^      ^^^^^
+        #                    $2 year      $4 course
+
+        self.new ("20" + $2).to_i, $4, $5, $1, $3
+    end
+
+    def self.from_json(json)
+
+        # TODO
+
+        data = JSON.parse(json, { symbolize_names: true })
+
+        if data[:json_class] != "Clazz"
+            throw "Not a Clazz!"
+        end
+
+        if data[("v" + JSON_VERSION.to_s).to_sym]
+
+        elsif data[:v]
+
+        end
+
+    end
+
+    alias to_s full_name
+
+    # `{ "json_class": "Clazz", "v": [ NAME, COURSE, CERT, JAHRGANG, GROUP ] }`
+    def to_json(opts = nil)
+        JSON.generate(
+            {
+                json_class: "Clazz", v: [
+                    (!@cert.nil? and !@number.nil?) ? self.short_name : nil,
+                    @course,
+                    @cert.nil? ? @cert : self.expand_cert,
+                    "ABB" + @year.to_s,
+                    @part
+                ],
+                ("v" + JSON_VERSION.to_s) => {
+                    year: @year,
+                    course: @course,
+                    group: @group,
+                    cert: @cert,
+                    number: @number,
+                    part: @part
+                }
+            }, opts)
+    end
+
+    def ==(other)
+
+        return false if other.nil?
+
+        @year == other.year and
+            @course == other.course and
+            @group == other.group and
+            @cert == other.cert and
+            @number == other.number and
+            @part == other.part
+    end
+
+    alias :eql? :==
+
+    def hash
+        @year.hash ^ @course.hash ^ @group.hash ^ @cert.hash ^ @number.hash ^ @part.hash
+    end
+
 end

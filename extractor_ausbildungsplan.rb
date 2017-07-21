@@ -244,7 +244,7 @@ class ExtractorAusbildungsplan
 
         inhalt.match(regex)
 
-        klasse = @data.extra[:class] = Clazz.from_clazz($1)
+        klasse = @data.extra[:class] = Clazz::from_short_name($1)
         ausbjahr = @data.extra[:ausbjahr] = $2
         company = @data.extra[:company] = $3
 
