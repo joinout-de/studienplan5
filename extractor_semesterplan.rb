@@ -242,6 +242,8 @@ class SemesterplanExtractor
                     rowJahrgang = ( rowHeader = rowPart[0]) ? rowHeader["bgcolor"] : ""
                     rowJahrgang = ( colorKey = jahrgangsColorKeys[j] ) ? colorKey[rowJahrgang] : ""
 
+                    next unless rowJahrgang
+
                     rowJahrgangClazz = Clazz::Jahrgang(rowJahrgang)
 
                     rowClass = nil
