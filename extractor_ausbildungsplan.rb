@@ -77,7 +77,7 @@ class ExtractorAusbildungsplan
 
         @logger.debug "---"
 
-        for zeilenNr in (1...inhalt.length).step(2)
+        for zeilenNr in (0...inhalt.length)
             zeile = inhalt[zeilenNr]["data"]
 
             # Zeilen:
@@ -94,6 +94,8 @@ class ExtractorAusbildungsplan
             # index of cells in row 0-2
             u = -1 # until cell
             c = 0 # current cell
+
+            next unless zeile[3]
 
             zeile[3].each do |va| # va - Veranstaltung
 
