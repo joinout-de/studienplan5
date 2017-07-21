@@ -73,7 +73,7 @@ class ExtractorAusbildungsplan
         #
 
         klasse = nil
-        resolveClazz(inhalt.shift["data"][0][1]["text"], /Klasse (..\d{3})Ausbildungsplan (\d{4} \/ \d{4})(.*)/) {|k| klasse = k }
+        resolveClazz(inhalt.shift["data"][0][1]["text"], /Klasse (..\d{3})Ausbildungsplan (\d{4} \/ \d{4})(.*)/) {|k| klasse = k } # pass regex b/c it's differnt for 0.9 and 1.0
 
         @logger.debug "---"
 
