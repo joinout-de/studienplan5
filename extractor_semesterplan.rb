@@ -371,14 +371,21 @@ class SemesterplanExtractor
 
                                     @@logger.debug "Result: #{text.inspect}, Sep: #{sep.inspect}, multidays: #{multidays}"
 
-                                    multidays.each do |mday|
-                                        redo_queue.push(mday + text) # Reassable the string for each day ("Do WP-BI2(b/c)-Sam", "Fr WP....", "Sa ....")
+                                    unless multidays.empty?
+
+                                        multidays.each do |mday|
+                                            redo_queue.push(mday + text) # Reassable the string for each day ("Do WP-BI2(b/c)-Sam", "Fr WP....", "Sa ....")
+                                        end
+
+                                        @@logger.debug "Redo..."
+
+                                        textElement.content = redo_queue.pop
+                                        redo # Did I already mentioned my NICE redo queue?
+
+                                    else
+                                        @@logger.warn "Multiday for #{text.inspect} failed, maybe something different matches."
                                     end
 
-                                    @@logger.debug "Redo..."
-
-                                    textElement.content = redo_queue.pop
-                                    redo # Did I already mentioned my NICE redo queue?
                                 end unless text.empty?
 
                                 # Now we dive into the more or less ugly code.
