@@ -447,6 +447,17 @@ class SemesterplanExtractor
                                             end
                                         end
                                         #
+                                        # Group is \d\w-\w ([num][from]-[to])
+                                        group.scan(/((\d)(\w-\w))/).each do |groupscan|
+
+                                            groupsplit = groupscan[2].split ?-
+                                            rep = (groupsplit[0]..groupsplit[1]).to_a.map {|c| groupscan[1].to_s + c }.join(?,)
+
+                                            group.gsub!(groupscan[0], rep )
+
+                                            @@logger.info "Group #{groupscan[0]} replaced with #{rep}."
+                                        end
+                                        #
                                         # Preperation from group as nr. 0
                                         prep="vor1"
                                         if group.include? prep
