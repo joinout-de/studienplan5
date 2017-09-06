@@ -288,6 +288,9 @@ class SemesterplanExtractor
 
                             text = textElement.text.strip # Guess who used #to_s instead of #text and wondered why there where HTML entities everywhere.
 
+
+                            @@logger.debug "Text: #{text}"
+
                             if text =~ /\w{2}\d{3}\+\w+ \(\w+\) \w/ # i.e. FS151+BSc (FST) d; (class), as mentioned above
 
                                 rowClass = Clazz::from_full_name(text)
@@ -335,7 +338,7 @@ class SemesterplanExtractor
 
                                 scan = text.scan regex # These monstrous regex above.
 
-                                @@logger.debug "Scan: #{scan}" unless scan.length == 0
+                                @@logger.debug "Scan: #{scan}"
 
                                 # Determine wether is one of these ugly multi-days like this one: "Do/Fr/Sa WP-BI2(b/c)-Sam"
                                 unless scan.length == text.split(" ")[0].scan(/(#{days_RE_text})/).length
@@ -472,7 +475,7 @@ class SemesterplanExtractor
                                         end
                                         if group =~ /(.+)-/
                                             wrong = $1
-                                            @@logger.warn "Something in group that does not belog there: #{wrong.inspect}"
+                                            @@logger.warn "Something in group that does not belog there: #{wrong.inspect} row #{i} / col #{k}"
                                             @@logger.debug "Context: #{text}"
                                             group.gsub!(wrong + "-", "")
                                             title += " " + wrong
