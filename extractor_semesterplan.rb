@@ -317,8 +317,6 @@ class SemesterplanExtractor
                                 #                                           by ":" or ".") (opt)                   group(s) are opt
                                 # * TODO: Replace with days_RE_text.
 
-                                @@logger.debug "Text: #{text.inspect}" unless text.empty?
-
                                 if text =~ /(.*):\n(.*)/m
                                     @@logger.debug "Comment. #{$2.inspect}"
                                     comment = $2
