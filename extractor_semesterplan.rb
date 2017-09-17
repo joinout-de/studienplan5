@@ -58,6 +58,10 @@ class SemesterplanExtractor
     @@logger = $logger || Logger.new(STDERR)
     @@logger.level = $logger && $logger.level || Logger::INFO
 
+    @@kw_re = /\d{4}\/KW \d{1,2}/ # year and cw, e.g. 2016/KW 23
+    @@jahrgang_re = /^(\w{3}\d{4})$/ # a jahrgang, e.g. ABB2016
+    @@class_cell_re = /^\w{2}(\d{2})\d{1}\+\w+ \(\w+\) \w$/ # a class cell, e.g. FS151+BSc (FST) d. Groups: YY, group)
+
 
     attr_reader :data
 
@@ -172,18 +176,20 @@ class SemesterplanExtractor
             key = (key = td0) ? key.text : key
 
             # Legend starts with this.
+            # TODO: Why Worst-case first?!
             if td1.text == "Abkürzung"
                 @@logger.debug "Plan End."
                 planEnd = true
-            elsif td1.text  =~ /\d{4}\/KW \d{1,2}/ # (year and cw) from above; YYYY/KW WW
+            elsif td1.text  =~ @@kw_re # (year and cw) from above; YYYY/KW WW
                 r = 0
                 w += 1
             end unless td1.nil?
 
-            if td0 and td0.text  =~ /^(\w{3}\d{4})$/ # (jahrgang) from above.
-                @@logger.debug "Jahrgang #{$1.inspect}"
+            if td0 and td0.text =~ @@class_cell_re # (class) from above
+                jg = "ABB20#{$1}"
+                @@logger.debug "Jahrgang #{jg.inspect} (Class: #{td0.text.inspect})"
                 unless jahrgangsColorKeys[w]; jahrgangsColorKeys[w] =  {}; end # One of the mentioned nested inits. Keep them in mind :)
-                jahrgangsColorKeys[w].store(td0["bgcolor"], $1)
+                jahrgangsColorKeys[w].store(td0["bgcolor"], jg)
             end
 
             if not planEnd
@@ -201,6 +207,8 @@ class SemesterplanExtractor
         end
 
         @@logger.debug "jahrgangsColorKeys #{jahrgangsColorKeys.inspect}"
+
+        @@logger.debug { "legend #{legend.map { |e| e[0].text }}" }
 
         # Step two: Parse stored data
         #
@@ -291,7 +299,7 @@ class SemesterplanExtractor
 
                             @@logger.debug "Text: #{text}"
 
-                            if text =~ /\w{2}\d{3}\+\w+ \(\w+\) \w/ # i.e. FS151+BSc (FST) d; (class), as mentioned above
+                            if text =~ @@class_cell_re # (class), as mentioned above
 
                                 rowClass = Clazz::from_full_name(text)
 
