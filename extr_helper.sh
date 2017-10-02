@@ -185,7 +185,11 @@ case "$Action" in
 
         password=$( EXTR_HELPER_MOODLE_DL_PASSASK 2>/dev/null || { read -sp "Moodle Password for $MOODLE_DL_USER: " && echo $REPLY; } )
 
-        curl -d username=$MOODLE_DL_USER -d "password=$password" http://siemens.lernvision.de/login/index.php $Src --cookie-jar "$Cookie_File" -o /dev/null -o "$Download_Target/$Src_Name"
+        curl --cookie-jar "$Cookie_File" --cookie "$Cookie_File" \
+            --data username=$MOODLE_DL_USER --data "password=$password" \
+            --location \
+            https://siemens.lernvision.de/login/index.php $Src \
+            --output /dev/null --output "$Download_Target/$Src_Name"
 
         bash $0 moodle "$Download_Target/$Src_Name"
         ;;
