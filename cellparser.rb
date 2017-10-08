@@ -47,7 +47,9 @@ class CellParser
         @contexts = []
     end
 
-    def parse
+    def parse(str=nil)
+
+        set(str) if str
 
         @pos = 0
         @depth = 0
@@ -233,7 +235,7 @@ class CellParser
                 record_word
             when :time
                 leave_context
-                record_word word
+                record_word
             else
                 warn_unknown_here
             end
