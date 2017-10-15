@@ -192,6 +192,10 @@ if outp
             exit 5
         end
     end
+else
+    icals_path = ical_dir
+    data_path = data_file
+    classes_path = classes_file
 end
 
 if File.exists? extr_config_file
