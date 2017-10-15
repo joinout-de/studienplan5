@@ -91,13 +91,14 @@ class CellParser
                 @result[:day] += elements
                 @reg.clear
                 enter_context :time
-            when /([\p{Word}\/-]+)/
+            when /^([\p{Word}\/-]+)$/
                 @result[:subj].push $1
                 debug { "Adding to subj" }
             when ""
                 debug { "Result empty." }
             else
-                debug { "Unknown result #{@reg.word.inspect}" }
+                debug { "Unknown result #{@reg.word.inspect}, adding to subject anyway" }
+                @result[:subj].push word
             end
         when :lect, ?[, :time
 
