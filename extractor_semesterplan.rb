@@ -361,47 +361,41 @@ class SemesterplanExtractor
                                         res[:groups].each do |group|
 
                                             # Expand group-ranges (like "4a-c" to "4a,4b,4c")
-                                            if group =~ /((?<num>\d)(?<from>\w)-(?<to>\w))/
-                                                rep = ($~[:from]..$~[:to]).to_a.map {|c| "%s%s" % [$~[:num], c] }.join(?,)
-                                                group = rep
-                                            end
 
                                             @@logger.debug "Searching groups"
 
-                                            group.split(/,|\//).each do |group|
-                                                if group =~ /^(?<num>\d)?(?<key>\w)(?<part>\d)?$/
+                                            if group =~ /^(?<num>\d)?(?<key>\w)(?<part>\d)?$/
 
-                                                    @@logger.debug "Group #{group}, key #{$~[:key]}"
+                                                @@logger.debug "Group #{group}, key #{$~[:key]}"
 
-                                                    # A group contain multiple classes, create element for both.
-                                                    classes = groups[rowJahrgang][$~[:key]]
+                                                # A group contain multiple classes, create element for both.
+                                                classes = groups[rowJahrgang][$~[:key]]
 
-                                                    if classes
-                                                        classes.each do |groupclazz|
+                                                if classes
+                                                    classes.each do |groupclazz|
 
-                                                            unless $~[:part].nil?
-                                                                groupclazz = groupclazz.with_part $~[:part]
-                                                            end
-
-                                                            element[:class] = groupclazz
-
-                                                            @@logger.debug "Class #{groupclazz.simple}, pe_start #{pe_start}"
-                                                            @@logger.debug { "Adding element #{element.inspect}" }
-
-                                                            @data.push element
-                                                            @data.extra[:classes].add(groupclazz)
+                                                        unless $~[:part].nil?
+                                                            groupclazz = groupclazz.with_part $~[:part]
                                                         end
 
-                                                        next
+                                                        element[:class] = groupclazz
 
-                                                    else
-                                                        @@logger.error "We don't know group %s yet! Please fix in XLS manually (row %s/col %s) and re-convert to HTML." % [$~.string.inspect, i, k]
+                                                        @@logger.debug "Class #{groupclazz.simple}, pe_start #{pe_start}"
+                                                        @@logger.debug { "Adding element #{element.inspect}" }
+
+                                                        @data.push element
+                                                        @data.extra[:classes].add(groupclazz)
                                                     end
+
+                                                    next
+
                                                 else
-                                                    @@logger.warn "Something in group that does not belong there! Appending \"(#{group})\" to title."
-                                                    element[:title] += " (#{group})"
-                                                    element[:class] = rowJahrgangClazz
+                                                    @@logger.error "We don't know group %s yet! Please fix in XLS manually (row %s/col %s) and re-convert to HTML." % [$~.string.inspect, i, k]
                                                 end
+                                            else
+                                                @@logger.warn "Something in group that does not belong there! Appending \"(#{group})\" to title."
+                                                element[:title] += " (#{group})"
+                                                element[:class] = rowJahrgangClazz
                                             end
                                         end
                                     end

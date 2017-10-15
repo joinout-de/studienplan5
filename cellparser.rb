@@ -116,7 +116,7 @@ class CellParser
             if sym == :time
                 leave_context
             end
-        when ?(
+        when ?(, :grp_range
             if word =~ /^\p{Number}+$/
                 @result[:dur] = word
             else
@@ -233,6 +233,13 @@ class CellParser
                 record_word
             when ?(
                 record_word
+            when :grp_range
+                record_word
+                if @reg.word =~ /((?<num>\d)(?<from>\w)-(?<to>\w))/ # Expand group-ranges (like "4a-c" to "4a,4b,4c")
+                    @reg.word = ""
+                    @reg.elements += ($~[:from]..$~[:to]).to_a.map {|c| "%s%s" % [$~[:num], c] }
+                end
+                delimit
             when :time
                 leave_context
                 record_word
@@ -279,6 +286,9 @@ class CellParser
                 enter_context :time_dur
                 record_element word
             when ?(
+                enter_context :grp_range
+                debug { "Word: #{word}, curr #{@current}"}
+                record_word word # pull in contents from outer context
                 record_word
             else
                 warn_unknown_here
