@@ -44,6 +44,7 @@ require "logger"
 require "set"
 require_relative "structs"
 require_relative "util"; include StudienplanUtil
+require_relative "cellparser"
 
 # Hackedy hack hack
 class Set
@@ -68,6 +69,7 @@ class SemesterplanExtractor
     def initialize(file)
         @file = file
         @data = Plan.new("Semsterplan")
+        @parser = CellParser.new
     end
 
     def extract
@@ -313,6 +315,102 @@ class SemesterplanExtractor
 
                                 nil # return nothing to block
                             elsif date != "Gruppe" # Is the case when we're in first column
+
+                                @@logger.debug "Text: #{text}"
+
+                                @parser.parse(text)
+
+                                res = @parser.result
+
+                                @@logger.debug { "Orig  : #{text.inspect}"}
+                                @@logger.debug {
+                                    "Parsed: " + ("%s%s[%s] %s(%s)-%s" % [
+                                        res[:day].join(?/), res[:time].join(?/), res[:rooms].join(?/),
+                                        res[:subj].join(?\ ), res[:groups].join(?/), res[:lect]]).strip.inspect
+                                }
+
+                                @@logger.debug { @parser.result.inspect }
+
+                                res[:lect] = ( lect = lects[res[:lect]] ) ? lect : res[:lect]
+
+                                element = { title: res[:subj].join(?\ ).strip, dur: res[:dur], time: nil, nr: nil, room: res[:rooms].join(?/), lect: res[:lect], more: nil, class: nil }
+
+                                if res[:day].empty?
+                                    res[:day].push "Mo"
+                                    element[:special] = :fullWeek
+                                end
+
+                                res[:day].each.with_index do |day,di|
+
+                                    pe_start = start.dup
+                                    pe_start += days.index day
+
+                                    if res[:time].length > 0
+                                       time = res[:time][res[:time].length >= di ? di : 0]
+                                       if /(?<hours>\d{1,2}):(?<minutes>\d{2})/ =~ time
+                                           pe_start += Rational(hours,24) + Rational(minutes,1440)  # 24h * 60min = 1440min
+                                       end
+                                    end
+
+                                    element[:time] = pe_start
+
+                                    if res[:groups].empty?
+                                        # add w/ rowJahrgangClazz
+                                        element[:class] = rowJahrgangClazz
+                                    else
+                                        res[:groups].each do |group|
+
+                                            # Expand group-ranges (like "4a-c" to "4a,4b,4c")
+                                            if group =~ /((?<num>\d)(?<from>\w)-(?<to>\w))/
+                                                rep = ($~[:from]..$~[:to]).to_a.map {|c| "%s%s" % [$~[:num], c] }.join(?,)
+                                                group = rep
+                                            end
+
+                                            @@logger.debug "Searching groups"
+
+                                            group.split(/,|\//).each do |group|
+                                                if group =~ /^(?<num>\d)?(?<key>\w)(?<part>\d)?$/
+
+                                                    @@logger.debug "Group #{group}, key #{$~[:key]}"
+
+                                                    # A group contain multiple classes, create element for both.
+                                                    classes = groups[rowJahrgang][$~[:key]]
+
+                                                    if classes
+                                                        classes.each do |groupclazz|
+
+                                                            unless $~[:part].nil?
+                                                                groupclazz = groupclazz.with_part $~[:part]
+                                                            end
+
+                                                            element[:class] = groupclazz
+
+                                                            @@logger.debug "Class #{groupclazz.simple}, pe_start #{pe_start}"
+                                                            @@logger.debug { "Adding element #{element.inspect}" }
+
+                                                            @data.push element
+                                                            @data.extra[:classes].add(groupclazz)
+                                                        end
+
+                                                        next
+
+                                                    else
+                                                        @@logger.error "We don't know group %s yet! Please fix in XLS manually (row %s/col %s) and re-convert to HTML." % [$~.string.inspect, i, k]
+                                                    end
+                                                else
+                                                    @@logger.warn "Something in group that does not belong there! Appending \"(#{group})\" to title."
+                                                    element[:title] += " (#{group})"
+                                                    element[:class] = rowJahrgangClazz
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+
+                                @@logger.debug { "Adding element #{element.inspect}" }
+                                @data.push element
+
+                                next
 
                                 # This is RegEx for (element), as mentioned above
                                 #
