@@ -326,14 +326,14 @@ class SemesterplanExtractor
                                 @@logger.debug {
                                     "Parsed: " + ("%s%s[%s] %s(%s)-%s" % [
                                         res[:day].join(?/), res[:time].join(?/), res[:rooms].join(?/),
-                                        res[:subj].join(?\ ), res[:groups].join(?/), res[:lect]]).strip.inspect
+                                        res[:subj].join(?\ ), res[:groups].join(?/), res[:lect].join(?/)]).strip.inspect
                                 }
 
                                 @@logger.debug { @parser.result.inspect }
 
-                                res[:lect] = ( lect = lects[res[:lect]] ) ? lect : res[:lect]
+                                res[:lect].map! {|lect| lects[lect] || lect }
 
-                                element = { title: res[:subj].join(?\ ).strip, dur: res[:dur], time: nil, nr: nil, room: res[:rooms].join(?/), lect: res[:lect], more: nil, class: nil }
+                                element = { title: res[:subj].join(?\ ).strip, dur: res[:dur], time: nil, nr: nil, room: res[:rooms].join(?/), lect: res[:lect].join(?/), more: nil, class: nil }
 
                                 if res[:day].empty?
                                     res[:day].push "Mo"

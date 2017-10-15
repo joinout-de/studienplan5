@@ -43,7 +43,7 @@ class CellParser
 
         @registers = [ CellRegisters.new() ]
         @reg = @registers[0]
-        @result = { day: [], time: [], rooms: [], subj: [], groups: [], dur: nil, lect: nil }
+        @result = { day: [], time: [], rooms: [], subj: [], groups: [], dur: nil, lect: [] }
         @contexts = []
     end
 
@@ -99,7 +99,7 @@ class CellParser
             else
                 debug { "Unknown result #{@reg.word.inspect}" }
             end
-        when ?[, :time
+        when :lect, ?[, :time
 
             sym = case context
                   when ?[ then :rooms
@@ -118,11 +118,11 @@ class CellParser
             end
         when ?(, :grp_range
             if word =~ /^\p{Number}+$/
-                @result[:dur] = word
+                @result[:dur] = word.to_i / 60.0
             else
                 @result[:groups] += elements
             end
-        when :lect, :dur
+        when :dur
             debug { "Setting #{context}" }
             @result[context] = word
             leave_context
@@ -262,8 +262,13 @@ class CellParser
                 warn_unknown_here
             end
         when /\p{Space}/, nil
-            delimit
-
+            case context
+            when :lect
+                delimit
+                leave_context
+            else
+                delimit
+            end
         when ?(, ?[
             delimit
             enter_context
@@ -312,7 +317,7 @@ class CellParser
                 else
                     record_word
                 end
-            when ?(, ?[, :time
+            when ?(, ?[, :time, :lect
                 record_element word, true
             else
                 warn_unknown_here
