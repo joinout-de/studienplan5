@@ -360,8 +360,6 @@ class SemesterplanExtractor
                                     else
                                         res[:groups].each do |group|
 
-                                            # Expand group-ranges (like "4a-c" to "4a,4b,4c")
-
                                             @@logger.debug "Searching groups"
 
                                             if group =~ /^(?<num>\d)?(?<key>\w)(?<part>\d)?$/
