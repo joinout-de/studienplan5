@@ -57,7 +57,7 @@ class CellParser
         progname = @logger.progname ? @logger.progname.dup : @logger.progname
         @logger.progname = __method__
 
-        @logger.info { "str: #{@str.inspect}" }
+        @logger.debug { "str: #{@str.inspect}" }
         
         while @pos <= @str.length
             advance
@@ -303,7 +303,7 @@ class CellParser
             case context
             when nil
                 record_word
-                warn "Dot in subject?"
+                debug "Dot in subject? #{word.inspect}"
             when :time, :time_dur
                 record_word ?:
             else
