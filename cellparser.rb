@@ -288,7 +288,7 @@ class CellParser
                 end
             when :time
                 leave_context
-                @reg.clear
+                @reg.clear # we have no access to this register later, clean now. Important contents are saved in local variables.
                 enter_context :time_dur
                 record_element word
             when ?(
