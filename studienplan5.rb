@@ -158,7 +158,7 @@ end
 
 optionParser.parse!
 
-if $options[:rc]
+if $options[:rc] and File.exists? 'studienplan_rc'
     File.open('studienplan_rc', 'rb'){|f| optionParser.parse(f.readlines.select{|l| !l.start_with?(?#) }.join.split(?\n)) }
 end
 
