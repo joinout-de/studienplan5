@@ -44,6 +44,7 @@ require "logger"
 require "set"
 require_relative "structs"
 require_relative "util"; include StudienplanUtil
+require_relative "cellparser"
 
 # Hackedy hack hack
 class Set
@@ -68,6 +69,7 @@ class SemesterplanExtractor
     def initialize(file)
         @file = file
         @data = Plan.new("Semsterplan")
+        @parser = CellParser.new
     end
 
     def extract
@@ -118,7 +120,7 @@ class SemesterplanExtractor
         days_RE_text = "(#{days.join ?|})"
 
         # Default values for options
-        default_dur = 3
+        default_dur = 3.25
 
         # Hackedy hack hack
         def groups.to_s # For debugging :)
@@ -278,7 +280,11 @@ class SemesterplanExtractor
                         # Type SPE/ATIW/...
                         elementType = ( elementType = element["bgcolor"] ) ? cellBGColorKeys[elementType] : elementType
 
-                        elementTexts = element.search("text()")
+                        elementTexts = element.search("font > text()")
+                        comment = element.search("comment")
+
+                        @@logger.debug("elementtexts: #{elementTexts.inspect}, comments: #{comment.inspect}")
+                        @@logger.debug("elementtexts: #{elementTexts.length}, comments: #{comment.length}")
 
                         comment = nil
                         redo_queue = []
@@ -295,6 +301,7 @@ class SemesterplanExtractor
                         elementTexts.each do |textElement|
 
                             text = textElement.text.strip # Guess who used #to_s instead of #text and wondered why there where HTML entities everywhere.
+                            comment = comment ? comment.text.strip : ""
 
 
                             @@logger.debug "Text: #{text}"
@@ -313,6 +320,99 @@ class SemesterplanExtractor
 
                                 nil # return nothing to block
                             elsif date != "Gruppe" # Is the case when we're in first column
+
+                                @@logger.debug "Text: #{text}"
+
+                                @parser.parse(text)
+
+                                res = @parser.result
+
+                                @@logger.debug { "Orig  : #{text.inspect}"}
+                                @@logger.debug {
+                                    "Parsed: " + ("%s%s[%s] %s(%s)-%s" % [
+                                        res[:day].join(?/), res[:time].join(?/), res[:rooms].join(?/),
+                                        res[:subj].join(?\ ), res[:groups].join(?/), res[:lect].join(?/)]).strip.inspect
+                                }
+
+                                @@logger.debug { @parser.result.inspect }
+
+                                res[:lect].map! {|lect| lects[lect] || lect }
+
+                                element = { title: res[:subj].join(?\ ).strip, dur: res[:dur] || default_dur, time: nil, nr: nil, room: res[:rooms].join(?/), lect: res[:lect].join(?/), more: nil, class: nil }
+
+                                if res[:day].empty?
+                                    res[:day].push "Mo"
+                                    element[:special] = :fullWeek
+                                end
+
+                                res[:day].each.with_index do |day,di|
+
+                                    @@logger.debug { day }
+
+                                    pe_start = start.dup
+                                    pe_start += days.index day
+
+                                    if res[:time].length > 0
+                                       time = res[:time][res[:time].length >= di ? di : 0]
+                                       if /(?<hours>\d{1,2}):(?<minutes>\d{2})/ =~ time
+                                           pe_start += Rational(hours,24) + Rational(minutes,1440)  # 24h * 60min = 1440min
+                                       end
+                                    end
+
+                                    element[:time] = pe_start
+
+                                    if res[:groups].empty?
+                                        # add w/ rowJahrgangClazz
+                                        element[:class] = rowJahrgangClazz
+                                        @@logger.debug { "Groups empty, using rowJahrgangClazz" }
+                                    else
+                                        res[:groups].each do |group|
+
+                                            @@logger.debug "Searching groups"
+
+                                            if group =~ /^(?<num>\d)?(?<key>\w)(?<part>\d)?$/
+
+                                                @@logger.debug "Group #{group}, key #{$~[:key]}"
+
+                                                # A group contain multiple classes, create element for both.
+                                                classes = groups[rowJahrgang][$~[:key]]
+
+                                                if classes
+                                                    classes.each do |groupclazz|
+
+                                                        unless $~[:part].nil?
+                                                            groupclazz = groupclazz.with_part $~[:part]
+                                                        end
+
+                                                        element[:class] = groupclazz
+
+                                                        @@logger.debug "Class #{groupclazz.simple}, pe_start #{pe_start}"
+                                                        @@logger.debug { "Adding element #{element.inspect}" }
+
+                                                        @data.push element.dup
+                                                        @data.extra[:classes].add(groupclazz)
+                                                    end
+
+                                                    next
+
+                                                else
+                                                    @@logger.error "We don't know group %s yet! Please fix in XLS manually (row %s/col %s) and re-convert to HTML." % [$~.string.inspect, i, k]
+                                                end
+                                            else
+                                                @@logger.warn "Something in group that does not belong there! Appending \"(#{group})\" to title."
+                                                element[:title] += " (#{group})"
+                                                element[:class] = rowJahrgangClazz
+                                            end
+                                        end
+                                    end
+
+                                    @@logger.debug { "Adding element #{element.inspect}" }
+                                    @data.push element.dup
+
+                                end
+
+
+                                next
 
                                 # This is RegEx for (element), as mentioned above
                                 #
