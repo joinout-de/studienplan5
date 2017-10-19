@@ -280,7 +280,11 @@ class SemesterplanExtractor
                         # Type SPE/ATIW/...
                         elementType = ( elementType = element["bgcolor"] ) ? cellBGColorKeys[elementType] : elementType
 
-                        elementTexts = element.search("text()")
+                        elementTexts = element.search("font > text()")
+                        comment = element.search("comment")
+
+                        @@logger.debug("elementtexts: #{elementTexts.inspect}, comments: #{comment.inspect}")
+                        @@logger.debug("elementtexts: #{elementTexts.length}, comments: #{comment.length}")
 
                         comment = nil
                         redo_queue = []
@@ -297,6 +301,7 @@ class SemesterplanExtractor
                         elementTexts.each do |textElement|
 
                             text = textElement.text.strip # Guess who used #to_s instead of #text and wondered why there where HTML entities everywhere.
+                            comment = comment ? comment.text.strip : ""
 
 
                             @@logger.debug "Text: #{text}"
