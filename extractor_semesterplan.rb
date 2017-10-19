@@ -347,6 +347,8 @@ class SemesterplanExtractor
 
                                 res[:day].each.with_index do |day,di|
 
+                                    @@logger.debug { day }
+
                                     pe_start = start.dup
                                     pe_start += days.index day
 
@@ -362,6 +364,7 @@ class SemesterplanExtractor
                                     if res[:groups].empty?
                                         # add w/ rowJahrgangClazz
                                         element[:class] = rowJahrgangClazz
+                                        @@logger.debug { "Groups empty, using rowJahrgangClazz" }
                                     else
                                         res[:groups].each do |group|
 
