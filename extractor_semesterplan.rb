@@ -381,7 +381,7 @@ class SemesterplanExtractor
                                                         @@logger.debug "Class #{groupclazz.simple}, pe_start #{pe_start}"
                                                         @@logger.debug { "Adding element #{element.inspect}" }
 
-                                                        @data.push element
+                                                        @data.push element.dup
                                                         @data.extra[:classes].add(groupclazz)
                                                     end
 
@@ -397,10 +397,12 @@ class SemesterplanExtractor
                                             end
                                         end
                                     end
+
+                                    @@logger.debug { "Adding element #{element.inspect}" }
+                                    @data.push element.dup
+
                                 end
 
-                                @@logger.debug { "Adding element #{element.inspect}" }
-                                @data.push element
 
                                 next
 
