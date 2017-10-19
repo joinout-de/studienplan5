@@ -156,11 +156,11 @@ optionParser = OptionParser.new do |opts|
 
 end
 
-optionParser.parse!
-
 if $options[:rc] and File.exists? 'studienplan_rc'
     File.open('studienplan_rc', 'rb'){|f| optionParser.parse(f.readlines.select{|l| !l.start_with?(?#) }.join.split(?\n)) }
 end
+
+optionParser.parse!
 
 if $options[:cal_dir]
     ical_dir = $options[:cal_dir]
