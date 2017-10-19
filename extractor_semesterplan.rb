@@ -120,7 +120,7 @@ class SemesterplanExtractor
         days_RE_text = "(#{days.join ?|})"
 
         # Default values for options
-        default_dur = 3
+        default_dur = 3.25
 
         # Hackedy hack hack
         def groups.to_s # For debugging :)
@@ -338,7 +338,7 @@ class SemesterplanExtractor
 
                                 res[:lect].map! {|lect| lects[lect] || lect }
 
-                                element = { title: res[:subj].join(?\ ).strip, dur: res[:dur], time: nil, nr: nil, room: res[:rooms].join(?/), lect: res[:lect].join(?/), more: nil, class: nil }
+                                element = { title: res[:subj].join(?\ ).strip, dur: res[:dur] || default_dur, time: nil, nr: nil, room: res[:rooms].join(?/), lect: res[:lect].join(?/), more: nil, class: nil }
 
                                 if res[:day].empty?
                                     res[:day].push "Mo"
