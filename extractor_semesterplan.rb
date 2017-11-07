@@ -44,6 +44,7 @@ require "logger"
 require "set"
 require_relative "structs"
 require_relative "util"; include StudienplanUtil
+require_relative "cellparser"
 
 # Hackedy hack hack
 class Set
@@ -58,12 +59,17 @@ class SemesterplanExtractor
     @@logger = $logger || Logger.new(STDERR)
     @@logger.level = $logger && $logger.level || Logger::INFO
 
+    @@kw_re = /\d{4}\/KW \d{1,2}/ # year and cw, e.g. 2016/KW 23
+    @@jahrgang_re = /^(\w{3}\d{4})$/ # a jahrgang, e.g. ABB2016
+    @@class_cell_re = /^\w{2}(\d{2})\d{1}\+\w+ \(\w+\) \w$/ # a class cell, e.g. FS151+BSc (FST) d. Groups: YY, group)
+
 
     attr_reader :data
 
     def initialize(file)
         @file = file
         @data = Plan.new("Semsterplan")
+        @parser = CellParser.new
     end
 
     def extract
@@ -111,10 +117,8 @@ class SemesterplanExtractor
         # Need this to determine offset when calculating start date. (German abbreviations for weekdays; maybe could solve this by locale, but what if user hasn't installed that?)
         days=["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
 
-        days_RE_text = "(#{days.join ?|})"
-
         # Default values for options
-        default_dur = 3
+        default_dur = 3.25
 
         # Hackedy hack hack
         def groups.to_s # For debugging :)
@@ -172,18 +176,20 @@ class SemesterplanExtractor
             key = (key = td0) ? key.text : key
 
             # Legend starts with this.
+            # TODO: Why Worst-case first?!
             if td1.text == "Abkürzung"
                 @@logger.debug "Plan End."
                 planEnd = true
-            elsif td1.text  =~ /\d{4}\/KW \d{1,2}/ # (year and cw) from above; YYYY/KW WW
+            elsif td1.text  =~ @@kw_re # (year and cw) from above; YYYY/KW WW
                 r = 0
                 w += 1
             end unless td1.nil?
 
-            if td0 and td0.text  =~ /^(\w{3}\d{4})$/ # (jahrgang) from above.
-                @@logger.debug "Jahrgang #{$1.inspect}"
+            if td0 and td0.text =~ @@class_cell_re # (class) from above
+                jg = "ABB20#{$1}"
+                @@logger.debug "Jahrgang #{jg.inspect} (Class: #{td0.text.inspect})"
                 unless jahrgangsColorKeys[w]; jahrgangsColorKeys[w] =  {}; end # One of the mentioned nested inits. Keep them in mind :)
-                jahrgangsColorKeys[w].store(td0["bgcolor"], $1)
+                jahrgangsColorKeys[w].store(td0["bgcolor"], jg)
             end
 
             if not planEnd
@@ -201,6 +207,8 @@ class SemesterplanExtractor
         end
 
         @@logger.debug "jahrgangsColorKeys #{jahrgangsColorKeys.inspect}"
+
+        @@logger.debug { "legend #{legend.map { |e| e[0].text }}" }
 
         # Step two: Parse stored data
         #
@@ -242,7 +250,9 @@ class SemesterplanExtractor
                     rowJahrgang = ( rowHeader = rowPart[0]) ? rowHeader["bgcolor"] : ""
                     rowJahrgang = ( colorKey = jahrgangsColorKeys[j] ) ? colorKey[rowJahrgang] : ""
 
-                    rowJahrgangClazz = Clazz::Jahrgang(rowJahrgang)
+                    next unless rowJahrgang
+
+                    rowJahrgangClazz = Clazz.new().with_year(rowJahrgang[-4,4].to_i) # 2015 of "ABB2015"
 
                     rowClass = nil
 
@@ -268,10 +278,11 @@ class SemesterplanExtractor
                         # Type SPE/ATIW/...
                         elementType = ( elementType = element["bgcolor"] ) ? cellBGColorKeys[elementType] : elementType
 
-                        elementTexts = element.search("text()")
+                        elementTexts = element.search("font > text()")
+                        comment = element.search("comment")
 
-                        comment = nil
-                        redo_queue = []
+                        @@logger.debug("elementtexts: #{elementTexts.inspect}, comments: #{comment.inspect}")
+                        @@logger.debug("elementtexts: #{elementTexts.length}, comments: #{comment.length}")
 
                         # Push the element type already, if present
                         if elementType
@@ -285,339 +296,142 @@ class SemesterplanExtractor
                         elementTexts.each do |textElement|
 
                             text = textElement.text.strip # Guess who used #to_s instead of #text and wondered why there where HTML entities everywhere.
+                            comment = comment ? comment.text.strip : ""
 
-                            #           Name                  Certificate
-                            #           vvvvvvvvvvvv          vvvvv
-                            if text =~ /(\w{2}\d{3})\+(\w+) \((\w+)\) (\w)/ # i.e. FS151+BSc (FST) d; (class), as mentioned above
-                                #                     ^^^^^           ^^^^
-                                #                     Course          Group
 
-                                name = $1
-                                course = $2  # Studiengang (BSc, BA)
-                                cert = $3 # Zertifizierung (FST, FIS, ...)
-                                group = $4
+                            @@logger.debug "Text: #{text}"
 
-                                rowClass = Clazz.new(name, course, cert, rowJahrgang)
+                            if text =~ @@class_cell_re # (class), as mentioned above
+
+                                rowClass = Clazz::from_full_name(text)
 
                                 @data.extra[:classes].add rowClass
 
                                 unless groups[rowJahrgang]; groups.store(rowJahrgang, {}); end
-                                unless groups[rowJahrgang][group]; groups[rowJahrgang].store group, Set.new; end
-                                groups[rowJahrgang][group].add rowClass
+                                unless groups[rowJahrgang][rowClass.group]; groups[rowJahrgang].store rowClass.group, Set.new; end
+                                groups[rowJahrgang][rowClass.group].add rowClass
 
                                 @@logger.debug "Class: #{rowClass}"
 
                                 nil # return nothing to block
                             elsif date != "Gruppe" # Is the case when we're in first column
 
-                                # This is RegEx for (element), as mentioned above
-                                #
-                                #        Weekdays* (or)           The word                          Room Nr/Name                 Lecturer Abbr.
-                                #                                 "ab" (opt)                        (opt)                        (lazy) (opt)    <----+
-                                #        vvvvvvvvvvvvvvvvvvv      vvvvvvvvv                         vvvvvvvvvvvv                 vvvvvvvvvvvvvvv      |
-                                regex = /(#{days.join("|")})[\. ]?(?:ab ?)?((\d{1,2})(\.|:)(\d{2}))?(\[(.*?)\])? ?(.+(?:\(.*?\))?(?:-.{2,3}?\W)?)?/  #| One Group
-                                #                                          ^^^^^^^^^^^^^^^^^^^^^^^^^               ^^^^^^^^^^^^^^                     |
-                                #                                           time (digits separated                 Subject and group(s)   <-----------+
-                                #                                           by ":" or ".") (opt)                   group(s) are opt
-                                # * TODO: Replace with days_RE_text.
+                                @@logger.debug "Text   : #{text}"
+                                @@logger.debug "Comment: #{comment.inspect}"
 
+                                @parser.parse(text)
 
-                                @@logger.debug "Text: #{text.inspect}" unless text.empty?
+                                res = @parser.result
 
-                                if text =~ /(.*):\n(.*)/m
-                                    @@logger.debug "Comment. #{$2.inspect}"
-                                    comment = $2
-                                    next # Huh, it's not cool to jump out of the loop.
-                                elsif text.include? "siehe Kommentar"
+                                @@logger.debug { "Orig  : #{text.inspect}"}
+                                @@logger.debug {
+                                    "Parsed: " + ("%s%s[%s] %s(%s)-%s" % [
+                                        res[:day].join(?/), res[:time].join(?/), res[:rooms].join(?/),
+                                        res[:subj].join(?\ ), res[:groups].join(?/), res[:lect].join(?/)]).strip.inspect
+                                }
 
-                                    @@logger.debug "Looking up comment."
+                                @@logger.debug { @parser.result.inspect }
 
-                                    redo_queue = comment.split("\n")
-                                    redo_queue.delete ""
+                                res[:lect].map! {|lect| lects[lect] || lect }
 
-                                    @@logger.debug "Comments: #{redo_queue.inspect}"
+                                element = { title: res[:subj].join(?\ ).strip, dur: res[:dur] || default_dur, time: nil, nr: nil, room: res[:rooms].join(?/), lect: res[:lect].join(?/), more: nil, class: nil }
 
-                                    textElement.content = redo_queue.pop
-                                    redo # I like my redo queue.
+                                if res[:day].empty?
+                                    res[:day].push "Mo"
+                                    element[:special] = :fullWeek
                                 end
 
-                                scan = text.scan regex # These monstrous regex above.
+                                res[:day].each.with_index do |day,di|
 
-                                @@logger.debug "Scan: #{scan}" unless scan.length == 0
+                                    @@logger.debug { day }
 
-                                # Determine wether is one of these ugly multi-days like this one: "Do/Fr/Sa WP-BI2(b/c)-Sam"
-                                unless scan.length == text.split(" ")[0].scan(/(#{days_RE_text})/).length
-
-                                        @@logger.info "Multiday! #{text.inspect}"
-
-                                    multidays = []
-                                    sep = nil
-                                    lastDay = false
-
-                                    text_ = text.gsub(/-\w{2,3}$/, "") # Lect. could be i.e. Sa.
-
-                                    # I feel like I have to explain this algorithm.
-                                    # - split by weekdays -> Using our example from above, that would be ["", "Do", "/", "Fr", "/", "Sa", " WP-BI2(b/c)-Sam"]
-                                    # - iterate over the splitted string.
-                                    #   + if its a weekday, store and set flag that it was.
-                                    #   + if last was a day and separator is not set, yet, set it to the current part. Reset flag.
-                                    #   + else reset flag only.
-                                    # Somehow trivial?
-                                    text_.split(/#{days_RE_text}/).each do |part|
-                                        if part =~ /^#{days_RE_text}$/
-                                            multidays.push part
-                                            lastDay = true
-                                        elsif lastDay and not sep
-                                            sep=part
-                                            lastDay = false
-                                        else
-                                            lastDay = false
-                                        end
-                                    end
-
-                                    text.gsub! multidays.join(sep), "" # Using our ex. "Do/Fr/Sa" would get deleted from the string
-
-                                    @@logger.debug "Result: #{text.inspect}, Sep: #{sep.inspect}, multidays: #{multidays}"
-
-                                    multidays.each do |mday|
-                                        redo_queue.push(mday + text) # Reassable the string for each day ("Do WP-BI2(b/c)-Sam", "Fr WP....", "Sa ....")
-                                    end
-
-                                    @@logger.debug "Redo..."
-
-                                    textElement.content = redo_queue.pop
-                                    redo # Did I already mentioned my NICE redo queue?
-                                end unless text.empty?
-
-                                # Now we dive into the more or less ugly code.
-                                # (if-elsif-elsif)
-                                # First, the best case: our RegEx matched.
-                                if
-                                    scan and
-                                        ( match = scan[0] ) and # What if there is more than one match? Is that even possible?
-                                        ( match.length == 8 ) and
-                                        ( match[7] != nil ) #TODO: REFACTOR!
-
-                                    day=match[0]
-                                    hours=match[2]
-                                    minutes=match[4]
-                                    room=match[6]
-
-                                    match7 = match[7].to_s.strip # match7 is shorter than match[7] xD
-
-                                    @@logger.debug "Match"
-
-                                    # pe -> plan element
                                     pe_start = start.dup
                                     pe_start += days.index day
 
-
-                                    if hours and minutes
-                                        pe_start += Rational(hours,24) + Rational(minutes,1440)  # 24h * 60min = 1440min
+                                    if res[:time].length > 0
+                                       time = res[:time][res[:time].length >= di ? di : 0]
+                                       if /(?<hours>\d{1,2}):(?<minutes>\d{2})/ =~ time
+                                           pe_start += Rational(hours,24) + Rational(minutes,1440)  # 24h * 60min = 1440min
+                                       end
                                     end
 
-                                    # Check what remaining information is there(if-else)
+                                    element[:time] = pe_start
 
-                                    # Subject, group/duration, lecturer, i.e. "DuA(1d)-Bö" or anything like "Subject(groups)-Lecturer"
-                                    if match7 =~ /(.*)\((.*)\)(-(.*))?/ # RegEx: title, group or duration, lecturer with leading dash (optional), lecturer (sub-match from prev.)
+                                    # This should be last, add anything else before
+                                    #
+                                    if res[:groups].empty?
 
-                                        #TODO: Multi-Title. Like multi-days. Ugly things. I.e. "WIN2/KRC(4c1/c2)-Wi/Schw"
+                                        @@logger.debug { "Groups empty ..." }
 
-                                        title = $1
-                                        group = $2
-                                        lect = (lect = lects[$4]) ? lect : $4 # Translate abbr., if possible
+                                        pushed = false
 
-                                        @@logger.debug "Lect: %s" % lect
+                                        if comment =~ /B\.?Sc\.?/
 
-                                        clazz = nil
+                                            @@logger.debug { "B.Sc. exam" }
 
-                                        # Some group specials
-                                        #
-                                        # Refresher from group to title
-                                        #TODO: From title to group as special nr. -1 maybe, thought it's illogial (Can't determine max. num. yet, would require another loop)
-                                        refr="Refr"
-                                        group.gsub! "Ref ", refr + " "
-                                        if group.include? refr
-                                            group.gsub! refr, ""
-                                            group.strip!
-                                            title += " " + refr
-                                        end
-                                        #
-                                        # Group is class
-                                        if group =~ /^(\w{2}\d{3})$/ # Class regex
-                                            @@logger.debug "Class #{$1} in group"
-                                            groups[rowJahrgang].each do |group_, classes|
-                                                classes.each do |clazz_|
-                                                    if clazz_.name == $1
-                                                        clazz = clazz_
-                                                    end
-                                                end
-                                            end
-                                        end
-                                        #
-                                        # Preperation from group as nr. 0
-                                        prep="vor1"
-                                        if group.include? prep
-                                            group.gsub! prep, "0"
-                                        end
-                                        if group =~ /(.+)-/
-                                            wrong = $1
-                                            @@logger.warn "Something in group that does not belog there: #{wrong.inspect}"
-                                            group.gsub!(wrong + "-", "")
-                                            title += " " + wrong
-                                            @@logger.debug title
+                                            element[:class] = (rowClass || rowJahrgangClazz).with_course("BSc")
+                                            @data.push element.dup
+
+                                            pushed = true
                                         end
 
-                                        # Parse the groups. (if-else)
-                                        #
-                                        # Exams. Groups = duration. We can receive more info from comment.
-                                        if title =~ /(KL-.*|.*-KL|WP .*|-WP .*)/i or group =~ /^\d+$/
+                                        if comment =~ /B\.?A\.?/
 
-                                            @@logger.debug "Klausur/Wahlpflicht #{title.inspect} #{group.inspect} (#{comment.inspect})" # #inspect to see non-printing chars (\r, \n)
+                                            @@logger.debug { "B.A. exam" }
 
-                                            room = nil
+                                            element[:class] = (rowClass || rowJahrgangClazz).with_course("BA")
+                                            @data.push element.dup
 
-                                            room_RE = / ?Raum (.*)/
-                                            if ( comment =~ room_RE ) # Huh, are the parenthesis required?
-                                                comment.gsub! room_RE, ""
-                                                room = $1
-                                            end
+                                            pushed = true
+                                        end
 
-                                            @@logger.debug "Rest-Comment #{comment.inspect}, rowJahrgang #{rowJahrgang}, Room #{room.inspect}"
+                                        unless pushed
+                                            @@logger.debug { rowClass ? "rowClass" : "rowJahrgangClazz" }
+                                            element[:class] = rowClass || rowJahrgangClazz
+                                            @data.push element.dup
+                                        end
 
-                                            dur_ = group.empty? ? nil : Rational(group, 60)
-
-                                            # Multi Courses! dafuq.
-                                            #TODO: We should put that (the ugly multi-* things) into a function.
-                                            unless comment.nil?
-
-                                                course_RE = /(b\.?sc\.?|b\.?a\.?)/im
-
-                                                courses = []
-                                                sep = nil
-                                                last_was_course = false
-
-                                                comment.split(course_RE).each do |split|
-                                                    if split =~ course_RE
-                                                        courses.push $1.gsub(".", "")
-                                                        last_was_course = true
-                                                    elsif last_was_course and not sep and split.length == 1
-                                                        sep = split
-                                                        last_was_course = false
-                                                    else
-                                                        last_was_course = false
-                                                    end
-                                                end
-
-                                                @@logger.debug "Courses %s, sep %s" % [courses.inspect, sep.inspect]
-
-                                                comment.gsub!(course_RE, "").strip!
-                                                comment.gsub!(sep, "") if sep
-
-                                                comment = nil if comment.empty?
-
-                                                courses.each do |course_name|
-
-                                                    clazz = rowJahrgangClazz.dup
-                                                    clazz.course = course_name
-
-                                                    @@logger.debug "Clazz: #{clazz}, Comment: #{comment.inspect}"
-
-                                                    @data.push({title: title, class: clazz, room: room, time: pe_start, dur: dur_, more: comment})
-                                                    @data.extra[:classes].add(clazz)
-                                                end
-                                            end
-                                        else # No exam, groups = groups
+                                    else
+                                        res[:groups].each do |group|
 
                                             @@logger.debug "Searching groups"
 
-                                            # This is if we have a plain class in groups.
-                                            if clazz
-                                                @@logger.debug "Using defined class #{clazz}"
+                                            if group =~ /^(?<num>\d)?(?<key>\w)(?<part>\d)?$/
 
-                                                @data.push({title: title, class: clazz, room: room, time: pe_start, dur: default_dur, lect: lect})
-                                                @data.extra[:classes].add(clazz)
-                                                next # Huh, these jumping again.
-                                            end
+                                                @@logger.debug "Group #{group}, key #{$~[:key]}"
 
-                                            nr = nil
+                                                # A group contain multiple classes, create element for both.
+                                                classes = groups[rowJahrgang][$~[:key]]
 
-                                            group.scan(/(\w)(\d?)/).each do |grp|  # Group regex; 0 = group name, 1 = group part, i.e: c2: $0 = c, $1 = 2
+                                                if classes
+                                                    classes.each do |groupclazz|
 
-                                                @@logger.debug "Group #{grp}"
-
-                                                # Match can be event nr or a group (finally!)
-                                                if grp[0] =~ /^\d+$/ and grp[1].empty?
-                                                    nr = grp[0]
-                                                else
-                                                    # A group contain multiple classes, create element for both.
-                                                    classes = groups[rowJahrgang][grp[0]]
-
-                                                    if classes
-                                                        classes.each do |groupclazz|
-
-                                                            unless groupclazz.nil? or grp[1].nil? or grp[1].empty?
-                                                                groupclazz = groupclazz.dup
-                                                                groupclazz.group = grp[1]
-                                                            end
-
-                                                            # TODO Why there's a nil check but below we use groupclazz even if it's nil? Huh?
-                                                            @@logger.debug "Class #{groupclazz.simple}, pe_start #{pe_start}"
-
-                                                            @data.push({title: title, class: groupclazz, room: room, time: pe_start, dur: default_dur, lect: lect, nr: nr})
-                                                            @data.extra[:classes].add(groupclazz)
+                                                        unless $~[:part].nil?
+                                                            groupclazz = groupclazz.with_part $~[:part]
                                                         end
-                                                    else
-                                                        @@logger.error "We don't know group %s yet! Please fix in XLS manually (row %s/col %s) and re-convert to HTML." % [grp[0].inspect, i, k]
+
+                                                        element[:class] = groupclazz
+
+                                                        @@logger.debug "Class #{groupclazz.simple}, pe_start #{pe_start}"
+                                                        @@logger.debug { "Adding element #{element.inspect}" }
+
+                                                        @data.push element.dup
+                                                        @data.extra[:classes].add(groupclazz)
                                                     end
+
+                                                    next
+
+                                                else
+                                                    @@logger.error "We don't know group %s yet! Please fix in XLS manually (row %s/col %s) and re-convert to HTML." % [$~.string.inspect, i, k]
                                                 end
+                                            else
+                                                @@logger.warn "Something in group that does not belong there! Appending \"(#{group})\" to title."
+                                                element[:title] += " (#{group})"
+                                                element[:class] = rowJahrgangClazz
+                                                @data.push element.dup
                                             end
                                         end
-                                    else # We got some other info
-                                        match7 = match[7].to_s.strip
-
-                                        @@logger.debug "Match7 ALTERN"
-
-                                        # Catch all the specialities we know. (There are exams without a duration! Who does this?)
-                                        #
-                                        #             Special titles $1                                                              Title $4 and room $5 only
-                                        #             vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv                vvvvvvvvvvvvv
-                                        if match7 =~ /(Testat-.*|Refr .*|Info (?:zu )?.*|.*-WP .*|.*KL.*|.*-Tutorium)|(.*)-(\w{2,3})|(.*) ?\[(.*)\]/
-                                            #                                                                         ^^^^^^^^^^^^^^
-                                            #                                                                         Something $2 with
-                                            #                                                                         a lecturer $3
-
-                                            @data.push({title: $1||$2||$4, class: rowClass||rowJahrgangClazz, room: $5, time: pe_start, lect: (lect = lects[$3]) ? lect : $3})
-
-                                        else # Currently have no example for this in mind, sry. But it's not special. That's good, isn't it? (Found one: "Präs-WP BI2")
-                                            @data.push({title: match7, class: rowClass||rowJahrgangClazz, time: pe_start})
-                                        end
-
-                                        @data.extra[:classes].add(rowClass||rowJahrgangClazz)
-
-                                        @@logger.info "#{match7} with title #{match7}, class #{rowClass||rowJahrgangClazz}, time #{pe_start}."
-                                    end # We're done with the information.
-
-                                    # The redo queue I mentioned.
-                                    if redo_queue.length > 0
-                                        @@logger.debug "Next element in redo queue"
-                                        textElement.content = redo_queue.pop
-                                        redo
                                     end
-                                elsif text =~ /(.*?) ?\[(.*)\]/ # Our general-purpose RegEx did not match. Try a RegEx for elems like "Studienpräsenz [24]". These are full-week events.
-                                    @@logger.debug "Title #{$1.inspect} and Room #{$2.inspect} only. Comment #{comment.inspect}"
-
-                                    # If we have another full-week-event, replace it.
-                                    @data.elements.delete_if do |e|
-                                        e[:title] == elementType and e[:time] == start
-                                    end
-
-                                    @data.add_full_week($1, rowClass, $2, start, comment)
-
-                                elsif not text.empty? # That's the worst case. Warn and simply add.
-                                    @@logger.warn "Fall-trough! #{text.inspect}"
-                                    @data.add_full_week(text, rowClass||rowJahrgangClazz, nil, start)
-
                                 end
                             end # ignore "Gruppe" texts
                         end if elementTexts # element texts iteration

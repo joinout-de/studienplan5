@@ -23,7 +23,7 @@ PDF_DIR="$SRC_DIR/pdf"
 JSON_DIR="$CONV_DIR/json"
 
 # If those constants are not set, tries to read from environment EXTR_HELPER_(NAME).
-TABULA="tabula"
+TABULA_JAR=""
 LOFFICE="loffice"
 MOODLE_DL_USER=
 
@@ -34,6 +34,7 @@ EXIT_MOODLE_NON_XLS=2
 EXIT_AUSBPLAN_NON_PDF=3
 EXIT_MOODLE_ALREADY_THERE=4
 EXIT_AUSBPLAN_ALREADY_THERE=5
+EXIT_MISSING_TABULA_JAR=7
 
 trap "exit" "SIGINT"
 
@@ -159,9 +160,12 @@ case $Third in
         ;;
 esac
 
-[ -z "$TABULA" ] && [[ "$EXTR_HELPER_TABULA" ]] && TABULA=$EXTR_HELPER_TABULA
+
+[ -z "$TABULA_JAR" ] && [[ "$EXTR_HELPER_TABULA_JAR" ]] && TABULA_JAR=$EXTR_HELPER_TABULA_JAR
 [ -z "$LOFFICE" ] && [[ "$EXTR_HELPER_LOFFICE" ]] && LOFFICE=$EXTR_HELPER_LOFFICE
 [ -z "$MOODLE_DL_USER" ] && [[ "$EXTR_HELPER_MOODLE_DL_USER" ]] && MOODLE_DL_USER=$EXTR_HELPER_MOODLE_DL_USER
+
+[ -z "$TABULA_JAR" ] && { echo >&2 "Missing tabula jar file! Please set EXTR_HELPER_TABULA_JAR."; exit $EXIT_MISSING_TABULA_JAR; }
 
 mkdir -p $DATA_DIR $HTML_DIR $XLS_DIR $PDF_DIR $JSON_DIR
 
@@ -181,7 +185,11 @@ case "$Action" in
 
         password=$( EXTR_HELPER_MOODLE_DL_PASSASK 2>/dev/null || { read -sp "Moodle Password for $MOODLE_DL_USER: " && echo $REPLY; } )
 
-        curl -d username=$MOODLE_DL_USER -d "password=$password" http://siemens.lernvision.de/login/index.php $Src --cookie-jar "$Cookie_File" -o /dev/null -o "$Download_Target/$Src_Name"
+        curl --cookie-jar "$Cookie_File" --cookie "$Cookie_File" \
+            --data username=$MOODLE_DL_USER --data "password=$password" \
+            --location \
+            https://siemens.lernvision.de/login/index.php $Src \
+            --output /dev/null --output "$Download_Target/$Src_Name"
 
         bash $0 moodle "$Download_Target/$Src_Name"
         ;;
@@ -221,10 +229,10 @@ case "$Action" in
             json_file=$JSON_DIR/$(replace_suffix "$New_Src_Name" .json)
 
             # https://github.com/tabulapdf/tabula-java (Pure Java) or https://github.com/tabulapdf/tabula-extractor (JRuby)
-            # -r -> --spreadsheet (it's a spreadsheet)
+            # -l -> --lattice (it's a spreadsheet)
             # -f -> --format (the output format, JSON for us)
             # -u -> --use-line-returns (tabula ignores line returns by default)
-            ${TABULA:-tabula} -ruf JSON "$pdf_file" > "$json_file"
+            java -jar ${TABULA_JAR} -l -u -f JSON "$pdf_file" > "$json_file"
 
             # tabula seems to produce invalid JSON, each row is interpreted as seperate spreadsheet with an single row as
             # an [[element, element, element]] array, but they are not seperated by an ",", so there is [[...]][[...]][[...]]...)

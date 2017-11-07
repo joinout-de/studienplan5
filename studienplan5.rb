@@ -56,12 +56,13 @@ $options = {
     all_ics: false,
     load_events: true,
     unified: true,
+    rc: true,
 }
 
 # Data from extractors
 data = Plan.new "Studienplan5"
 
-OptionParser.new do |opts|
+optionParser = OptionParser.new do |opts|
 
     opts.banner = "Usage: %s [options]" % $0
     opts.separator ""
@@ -119,9 +120,15 @@ OptionParser.new do |opts|
         $options[:extr_cfg] = extr_cfg
     end
 
+    opts.on("--[no-]rc", "Do (not) load options/arguments from ./studienplan_rc. One argument/option per line. Lines starting with # are ignored. Default: Read.") do |rc|
+        $options[:rc] = rc
+    end
+
     opts.on("--[no-]all-ics", "Do (not) write an ICS file containing all events. Default: Do not write.") do |all_ics|
         $options[:all_ics] = all_ics;
     end
+
+    opts.on("--tabula VERSION", "Set the tabula data version. Currently: 1.0 (default) or 0.9") {|ver| $TABULA_VERSION=ver }
 
     # Extractors
     # TODO: Move extr_helper-code here (studienplan5) or to extractors. Maybe management here, converting in extractors.
@@ -135,7 +142,7 @@ OptionParser.new do |opts|
 
     opts.on("--ausbplan FILE", "Extract data from a JSONed PDF Ausbildungsplan. Use extr_helper for PDF -> JSON.") do |semplan|
         File.open(semplan, "rb") do |f|
-            data = data.merge Ausbildungsplan.new(f).extract
+            data = data.merge ExtractorAusbildungsplan.new(f).extract
         end
     end
 
@@ -147,7 +154,13 @@ OptionParser.new do |opts|
         exit
     end
 
-end.parse!
+end
+
+if $options[:rc] and File.exists? 'studienplan_rc'
+    File.open('studienplan_rc', 'rb'){|f| optionParser.parse(f.readlines.select{|l| !l.start_with?(?#) }.join.split(?\n)) }
+end
+
+optionParser.parse!
 
 if $options[:cal_dir]
     ical_dir = $options[:cal_dir]
@@ -179,6 +192,10 @@ if outp
             exit 5
         end
     end
+else
+    icals_path = ical_dir
+    data_path = data_file
+    classes_path = classes_file
 end
 
 if File.exists? extr_config_file
@@ -234,8 +251,24 @@ if data
     $logger.debug "We have data."
     $logger.debug $options.inspect
 
+    $logger.debug "Collected, extending classes: "
+    data.extra[:classes].select{|c| !c.cert.nil? }.each{|c| $logger.debug "#{c.full_name} (#{c.cert.nil? ? "?????" : c.short_name})" }
+
+    # hash for extending "short named" classes
+    ext_classes = {}
+    data.extra[:classes].select{|c| !c.cert.nil? }.each{|c| ext_classes[c.short_name] = c }
+
     $logger.debug "Remove duplicates..."
-    data.elements.uniq! {|e| [e[:time], e[:title], e[:class], e[:special]] }
+    data.elements.uniq! do |e|
+
+        clazz = e[:class]
+        if clazz.short_named? and ext_class = ext_classes[clazz.short_name]
+            $logger.debug "Extending #{clazz} using #{ext_class}"
+            e[:class] = ext_class
+        end
+
+        [e[:time], e[:title], e[:class], e[:special]]
+    end
 
     if $options[:json]
 
@@ -285,12 +318,19 @@ if data
 
         $logger.info "Collecting events..."
 
+
         data.elements.each do |elem|
 
             clazz = elem[:class]
 
-            $logger.debug "Class: #{clazz.inspect}"
-            $logger.debug "Elem: #{elem.inspect}" unless clazz
+            $logger.debug "Class: #{clazz}"
+
+            unless clazz
+                $logger.warn "Missing class!"
+                $logger.debug "Elem: #{elem.inspect}"
+            end
+
+            $logger.error "Class is nil! #{elem.inspect}" unless clazz
 
             calendars[clazz] = cal_stub.dup unless calendars[clazz]
 
@@ -349,9 +389,14 @@ if data
 
                 $logger.debug "Parent events for #{clazz}"
 
+                unless clazz
+                    $logger.warn "Calendar without a clazz! Most likely something went wrong during extraction."
+                    next
+                end
+
                 parent = clazz
                 while parent = parent.parent
-                    $logger.debug parent
+                    $logger.debug "#{parent}"
                     calendars[parent].events.each do |evt| calendars[clazz].add_event evt end if calendars[parent]
                 end
             end
@@ -376,7 +421,12 @@ if data
 
         calendars.each_pair do |clazz, cal|
 
-            $logger.debug "Class: #{clazz.inspect}"
+            unless clazz
+                $logger.warn "Calendar without a clazz! Most likely something went wrong during extraction."
+                next
+            end
+
+            $logger.debug "Class: #{clazz}"
 
             clazz_file = icals_path + File::SEPARATOR + StudienplanUtil.class_ical_name(clazz) + ".ical"
             clazz_file.gsub!(/\.ical/, ".unified.ical") if $options[:unified]
