@@ -284,8 +284,6 @@ class SemesterplanExtractor
                         @@logger.debug("elementtexts: #{elementTexts.inspect}, comments: #{comment.inspect}")
                         @@logger.debug("elementtexts: #{elementTexts.length}, comments: #{comment.length}")
 
-                        comment = nil
-
                         # Push the element type already, if present
                         if elementType
                             @@logger.debug "Type: #{elementType.inspect}"
@@ -361,10 +359,37 @@ class SemesterplanExtractor
                                     # This should be last, add anything else before
                                     #
                                     if res[:groups].empty?
-                                        # add w/ rowJahrgangClazz
-                                        element[:class] = rowJahrgangClazz
-                                        @@logger.debug { "Groups empty, using rowJahrgangClazz" }
-                                        @data.push element.dup
+
+                                        @@logger.debug { "Groups empty ..." }
+
+                                        pushed = false
+
+                                        if comment =~ /B\.?Sc\.?/
+
+                                            @@logger.debug { "B.Sc. exam" }
+
+                                            element[:class] = (rowClass || rowJahrgangClazz).with_course("BSc")
+                                            @data.push element.dup
+
+                                            pushed = true
+                                        end
+
+                                        if comment =~ /B\.?A\.?/
+
+                                            @@logger.debug { "B.A. exam" }
+
+                                            element[:class] = (rowClass || rowJahrgangClazz).with_course("BA")
+                                            @data.push element.dup
+
+                                            pushed = true
+                                        end
+
+                                        unless pushed
+                                            @@logger.debug { rowClass ? "rowClass" : "rowJahrgangClazz" }
+                                            element[:class] = rowClass || rowJahrgangClazz
+                                            @data.push element.dup
+                                        end
+
                                     else
                                         res[:groups].each do |group|
 
