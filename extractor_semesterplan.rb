@@ -316,7 +316,8 @@ class SemesterplanExtractor
                                 nil # return nothing to block
                             elsif date != "Gruppe" # Is the case when we're in first column
 
-                                @@logger.debug "Text: #{text}"
+                                @@logger.debug "Text   : #{text}"
+                                @@logger.debug "Comment: #{comment.inspect}"
 
                                 @parser.parse(text)
 
