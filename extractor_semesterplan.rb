@@ -358,10 +358,13 @@ class SemesterplanExtractor
 
                                     element[:time] = pe_start
 
+                                    # This should be last, add anything else before
+                                    #
                                     if res[:groups].empty?
                                         # add w/ rowJahrgangClazz
                                         element[:class] = rowJahrgangClazz
                                         @@logger.debug { "Groups empty, using rowJahrgangClazz" }
+                                        @data.push element.dup
                                     else
                                         res[:groups].each do |group|
 
@@ -399,13 +402,10 @@ class SemesterplanExtractor
                                                 @@logger.warn "Something in group that does not belong there! Appending \"(#{group})\" to title."
                                                 element[:title] += " (#{group})"
                                                 element[:class] = rowJahrgangClazz
+                                                @data.push element.dup
                                             end
                                         end
                                     end
-
-                                    @@logger.debug { "Adding element #{element.inspect}" }
-                                    @data.push element.dup
-
                                 end
                             end # ignore "Gruppe" texts
                         end if elementTexts # element texts iteration

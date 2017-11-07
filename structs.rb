@@ -32,6 +32,7 @@ class Plan
     end
 
     def push_element(fields)
+        @@logger.debug { "New element: #{fields.inspect}" }
         @elements.push(fields)
     end
 
