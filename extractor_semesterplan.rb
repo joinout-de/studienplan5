@@ -284,8 +284,6 @@ class SemesterplanExtractor
                         @@logger.debug("elementtexts: #{elementTexts.inspect}, comments: #{comment.inspect}")
                         @@logger.debug("elementtexts: #{elementTexts.length}, comments: #{comment.length}")
 
-                        comment = nil
-
                         # Push the element type already, if present
                         if elementType
                             @@logger.debug "Type: #{elementType.inspect}"
@@ -318,7 +316,8 @@ class SemesterplanExtractor
                                 nil # return nothing to block
                             elsif date != "Gruppe" # Is the case when we're in first column
 
-                                @@logger.debug "Text: #{text}"
+                                @@logger.debug "Text   : #{text}"
+                                @@logger.debug "Comment: #{comment.inspect}"
 
                                 @parser.parse(text)
 
@@ -358,10 +357,40 @@ class SemesterplanExtractor
 
                                     element[:time] = pe_start
 
+                                    # This should be last, add anything else before
+                                    #
                                     if res[:groups].empty?
-                                        # add w/ rowJahrgangClazz
-                                        element[:class] = rowJahrgangClazz
-                                        @@logger.debug { "Groups empty, using rowJahrgangClazz" }
+
+                                        @@logger.debug { "Groups empty ..." }
+
+                                        pushed = false
+
+                                        if comment =~ /B\.?Sc\.?/
+
+                                            @@logger.debug { "B.Sc. exam" }
+
+                                            element[:class] = (rowClass || rowJahrgangClazz).with_course("BSc")
+                                            @data.push element.dup
+
+                                            pushed = true
+                                        end
+
+                                        if comment =~ /B\.?A\.?/
+
+                                            @@logger.debug { "B.A. exam" }
+
+                                            element[:class] = (rowClass || rowJahrgangClazz).with_course("BA")
+                                            @data.push element.dup
+
+                                            pushed = true
+                                        end
+
+                                        unless pushed
+                                            @@logger.debug { rowClass ? "rowClass" : "rowJahrgangClazz" }
+                                            element[:class] = rowClass || rowJahrgangClazz
+                                            @data.push element.dup
+                                        end
+
                                     else
                                         res[:groups].each do |group|
 
@@ -399,13 +428,10 @@ class SemesterplanExtractor
                                                 @@logger.warn "Something in group that does not belong there! Appending \"(#{group})\" to title."
                                                 element[:title] += " (#{group})"
                                                 element[:class] = rowJahrgangClazz
+                                                @data.push element.dup
                                             end
                                         end
                                     end
-
-                                    @@logger.debug { "Adding element #{element.inspect}" }
-                                    @data.push element.dup
-
                                 end
                             end # ignore "Gruppe" texts
                         end if elementTexts # element texts iteration
